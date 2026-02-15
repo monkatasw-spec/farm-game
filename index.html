@@ -21,37 +21,43 @@ body {
   align-items: center;
 }
 
+/* ⬇️ ВАЖНО: flex + column */
 .game {
   width: 92vw;
   max-width: 420px;
+  min-height: 520px;
   background: rgba(255,255,255,0.35);
   backdrop-filter: blur(8px);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 16px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 h1 {
-  text-align: center;
   margin: 6px 0;
 }
 
 .money {
-  text-align: center;
   font-size: 18px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
+/* ⬇️ ПОЛЕТАТА */
 .fields {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 14px;
+  width: 100%;
   justify-items: center;
+  margin-bottom: 14px;
 }
 
 .field {
-  width: 88px;
-  height: 88px;
+  width: 80px;
+  height: 80px;
   background: #8b5a2b;
   border-radius: 14px;
   display: flex;
@@ -59,7 +65,7 @@ h1 {
   align-items: center;
   font-size: 38px;
   cursor: pointer;
-  transition: transform 0.2s, background 0.3s;
+  transition: transform 0.2s;
 }
 
 .field:hover {
@@ -67,7 +73,7 @@ h1 {
 }
 
 .grow {
-  animation: grow 0.6s ease;
+  animation: grow 0.5s ease;
 }
 
 @keyframes grow {
@@ -77,15 +83,14 @@ h1 {
 
 .controls {
   display: flex;
-  justify-content: space-around;
-  margin-top: 14px;
+  gap: 10px;
 }
 
 button {
   border: none;
   border-radius: 14px;
   padding: 10px 14px;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
 }
 </style>
@@ -97,8 +102,10 @@ button {
   <h1>🌾 Ферма Онлайн</h1>
   <div class="money">💰 <span id="money">0</span></div>
 
+  <!-- ПОЛЕТАТА -->
   <div class="fields" id="fields"></div>
 
+  <!-- БУТОНИ -->
   <div class="controls">
     <button onclick="selectCrop('wheat')">🌾 Пшеница</button>
     <button onclick="selectCrop('carrot')">🥕 Морков</button>
@@ -132,9 +139,7 @@ function render() {
   fieldsData.forEach((f, i) => {
     const div = document.createElement("div");
     div.className = "field";
-
     if (f) div.textContent = f.emoji;
-
     div.onclick = () => clickField(i);
     fieldsEl.appendChild(div);
   });
