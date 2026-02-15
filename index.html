@@ -22,12 +22,13 @@ body {
 }
 
 .game {
-  width: 92%;
+  width: 92vw;
   max-width: 420px;
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(6px);
-  border-radius: 24px;
+  background: rgba(255,255,255,0.35);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
   padding: 16px;
+  box-sizing: border-box;
 }
 
 h1 {
@@ -37,70 +38,68 @@ h1 {
 
 .money {
   text-align: center;
-  font-size: 20px;
-  margin-bottom: 12px;
+  font-size: 18px;
+  margin-bottom: 10px;
 }
 
-.grid {
+.fields {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   justify-items: center;
 }
 
-.plot {
-  width: 95px;
-  height: 95px;
-  background: linear-gradient(#8b5a2b, #6b3e1e);
-  border-radius: 20px;
+.field {
+  width: 88px;
+  height: 88px;
+  background: #8b5a2b;
+  border-radius: 14px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 40px;
+  font-size: 38px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, background 0.3s;
 }
 
-.plot:active {
-  transform: scale(0.95);
+.field:hover {
+  transform: scale(1.05);
 }
 
-.plot.growing {
-  animation: grow 2s infinite alternate;
+.grow {
+  animation: grow 0.6s ease;
 }
 
 @keyframes grow {
-  from { transform: scale(0.9); }
-  to { transform: scale(1); }
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
-.menu {
+.controls {
   display: flex;
   justify-content: space-around;
   margin-top: 14px;
 }
 
-.menu button {
-  flex: 1;
-  margin: 0 4px;
+button {
   border: none;
   border-radius: 14px;
-  padding: 10px;
+  padding: 10px 14px;
   font-size: 16px;
-  background: #fff;
   cursor: pointer;
 }
 </style>
 </head>
 
 <body>
+
 <div class="game">
   <h1>🌾 Ферма Онлайн</h1>
-  <div class="money">💰 <span id="money">500</span></div>
+  <div class="money">💰 <span id="money">0</span></div>
 
-  <div class="grid" id="grid"></div>
+  <div class="fields" id="fields"></div>
 
-  <div class="menu">
+  <div class="controls">
     <button onclick="selectCrop('wheat')">🌾 Пшеница</button>
     <button onclick="selectCrop('carrot')">🥕 Морков</button>
     <button onclick="selectCrop('tomato')">🍅 Домати</button>
@@ -109,68 +108,59 @@ h1 {
 
 <script>
 const crops = {
-  wheat: { icon: "🌾", time: 3000, reward: 20 },
-  carrot: { icon: "🥕", time: 4000, reward: 30 },
-  tomato: { icon: "🍅", time: 5000, reward: 40 }
+  wheat: { emoji: "🌾", time: 3000, profit: 20 },
+  carrot: { emoji: "🥕", time: 4000, profit: 30 },
+  tomato: { emoji: "🍅", time: 5000, profit: 40 }
 };
 
-let money = parseInt(localStorage.getItem("money")) || 500;
-let selectedCrop = null;
-let plots = JSON.parse(localStorage.getItem("plots")) || Array(9).fill(null);
+let selected = null;
+let money = Number(localStorage.getItem("money")) || 500;
+let fieldsData = JSON.parse(localStorage.getItem("fields")) || Array(9).fill(null);
 
 const moneyEl = document.getElementById("money");
-const grid = document.getElementById("grid");
+const fieldsEl = document.getElementById("fields");
 
 moneyEl.textContent = money;
 
 function save() {
   localStorage.setItem("money", money);
-  localStorage.setItem("plots", JSON.stringify(plots));
-}
-
-function selectCrop(crop) {
-  selectedCrop = crop;
+  localStorage.setItem("fields", JSON.stringify(fieldsData));
 }
 
 function render() {
-  grid.innerHTML = "";
-  plots.forEach((plot, i) => {
+  fieldsEl.innerHTML = "";
+  fieldsData.forEach((f, i) => {
     const div = document.createElement("div");
-    div.className = "plot";
+    div.className = "field";
 
-    if (plot) {
-      div.textContent = crops[plot.type].icon;
+    if (f) div.textContent = f.emoji;
 
-      if (!plot.ready) {
-        div.classList.add("growing");
-      }
-    }
-
-    div.onclick = () => clickPlot(i);
-    grid.appendChild(div);
+    div.onclick = () => clickField(i);
+    fieldsEl.appendChild(div);
   });
 }
 
-function clickPlot(i) {
-  const plot = plots[i];
+function selectCrop(crop) {
+  selected = crop;
+}
 
-  if (!plot && selectedCrop) {
-    plots[i] = { type: selectedCrop, ready: false };
+function clickField(i) {
+  if (!fieldsData[i] && selected) {
+    const crop = crops[selected];
+    fieldsData[i] = { ...crop, ready: false };
     render();
 
     setTimeout(() => {
-      plots[i].ready = true;
-      save();
+      fieldsData[i].ready = true;
       render();
-    }, crops[selectedCrop].time);
+      save();
+    }, crop.time);
 
     save();
-    return;
   }
-
-  if (plot && plot.ready) {
-    money += crops[plot.type].reward;
-    plots[i] = null;
+  else if (fieldsData[i] && fieldsData[i].ready) {
+    money += fieldsData[i].profit;
+    fieldsData[i] = null;
     moneyEl.textContent = money;
     save();
     render();
@@ -179,5 +169,6 @@ function clickPlot(i) {
 
 render();
 </script>
+
 </body>
 </html>
