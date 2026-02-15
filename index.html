@@ -6,89 +6,74 @@
 <title>Ферма Онлайн</title>
 
 <style>
-html, body {
+* {
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
   margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont;
-  background: url("grass.JPG") repeat;
-  background-size: 250px 250px;
+  min-height: 100vh;
+  background: url("https://i.imgur.com/6QZ6FQy.jpg") no-repeat center center fixed;
+  background-size: cover;
 }
 
-/* Основен контейнер – ПЛЪТЕН */
+/* ОСНОВЕН КОНТЕЙНЕР – НЕ Е ПРОЗРАЧЕН */
 .game {
-  max-width: 420px;
-  margin: 20px auto;
-  background: #8fbc5a; /* плътен зелен фон */
-  border-radius: 30px;
+  background: #6b8f3a; /* плътен зелен фон */
+  min-height: 100vh;
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
 }
 
-/* Заглавие */
-h1 {
+/* ЗАГЛАВИЕ */
+.header {
   text-align: center;
-  margin: 10px 0;
+  color: white;
+  margin-bottom: 10px;
 }
 
-/* Пари */
 .money {
-  text-align: center;
   font-size: 22px;
-  margin-bottom: 15px;
+  margin-top: 5px;
 }
 
-/* ПОЛЕТА – ТУК НЯМА ПРОЗРАЧНОСТ */
-.fields {
+/* ПОЛЕТА – МРЪСОТИЯ */
+.field-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  background: #6b8e23; /* плътна земя между полетата */
+  gap: 12px;
+  margin: 20px auto;
+  max-width: 360px;
+
+  background: #6b8f3a; /* ТОВА МАХА ПРОЗРАЧНОТО МЕЖДУ ПОЛЕТАТА */
   padding: 12px;
-  border-radius: 20px;
+  border-radius: 16px;
 }
 
-/* ЕДНО ПОЛЕ */
 .field {
-  background: linear-gradient(#8b5a2b, #6f3f1c);
-  border-radius: 16px;
+  background: #8b5a2b;
+  border-radius: 18px;
   height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: 36px;
   cursor: pointer;
-  transition: transform 0.15s;
 }
 
-.field:active {
-  transform: scale(0.95);
-}
-
-/* Анимация при израстване */
-.grow {
-  animation: grow 0.4s ease;
-}
-
-@keyframes grow {
-  from { transform: scale(0.6); opacity: 0.5; }
-  to   { transform: scale(1); opacity: 1; }
-}
-
-/* Бутони */
-.buttons {
+/* БУТОНИ */
+.controls {
   display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
 }
 
-button {
-  flex: 1;
-  margin: 5px;
-  padding: 10px;
-  font-size: 16px;
-  border: none;
+.crop-btn {
+  background: white;
   border-radius: 14px;
-  background: #ffffff;
+  padding: 10px 14px;
+  font-size: 18px;
   cursor: pointer;
 }
 </style>
@@ -97,65 +82,61 @@ button {
 <body>
 
 <div class="game">
-  <h1>🌾 Ферма Онлайн</h1>
-  <div class="money">💰 <span id="money">500</span></div>
+  <div class="header">
+    <h1>🌾 Ферма Онлайн</h1>
+    <div class="money">💰 <span id="money">500</span></div>
+  </div>
 
-  <div class="fields" id="fields"></div>
+  <div class="field-grid" id="grid"></div>
 
-  <div class="buttons">
-    <button onclick="selectCrop('🌾', 10, 20)">Пшеница</button>
-    <button onclick="selectCrop('🥕', 15, 30)">Морков</button>
-    <button onclick="selectCrop('🍅', 20, 40)">Домати</button>
+  <div class="controls">
+    <div class="crop-btn" onclick="selectCrop('🌾',10)">Пшеница</div>
+    <div class="crop-btn" onclick="selectCrop('🥕',15)">Морков</div>
+    <div class="crop-btn" onclick="selectCrop('🍅',20)">Домати</div>
   </div>
 </div>
 
 <script>
-const fieldsEl = document.getElementById("fields");
-const moneyEl = document.getElementById("money");
-
+const grid = document.getElementById("grid");
+let money = Number(localStorage.getItem("money")) || 500;
+let fields = JSON.parse(localStorage.getItem("fields")) || Array(12).fill("");
 let selected = null;
-let money = parseInt(localStorage.getItem("money")) || 500;
-let fields = JSON.parse(localStorage.getItem("fields")) || Array(12).fill(null);
+let price = 0;
 
-moneyEl.textContent = money;
-
-/* Създаване на полетата */
-function render() {
-  fieldsEl.innerHTML = "";
-  fields.forEach((f, i) => {
-    const div = document.createElement("div");
-    div.className = "field";
-    if (f) div.textContent = f.icon;
-    div.onclick = () => clickField(i);
-    fieldsEl.appendChild(div);
-  });
-}
-
-function selectCrop(icon, cost, sell) {
-  selected = { icon, cost, sell };
-}
-
-function clickField(i) {
-  if (fields[i]) {
-    // Обиране
-    money += fields[i].sell;
-    fields[i] = null;
-  } else if (selected && money >= selected.cost) {
-    // Засаждане
-    money -= selected.cost;
-    fields[i] = selected;
-    setTimeout(() => {
-      document.querySelectorAll(".field")[i].classList.add("grow");
-    }, 50);
-  }
-  save();
-  render();
-}
+document.getElementById("money").textContent = money;
 
 function save() {
   localStorage.setItem("money", money);
   localStorage.setItem("fields", JSON.stringify(fields));
-  moneyEl.textContent = money;
+}
+
+function render() {
+  grid.innerHTML = "";
+  fields.forEach((crop, i) => {
+    const div = document.createElement("div");
+    div.className = "field";
+    div.textContent = crop;
+    div.onclick = () => clickField(i);
+    grid.appendChild(div);
+  });
+}
+
+function selectCrop(c, p) {
+  selected = c;
+  price = p;
+}
+
+function clickField(i) {
+  if (!fields[i] && selected && money >= price) {
+    fields[i] = selected;
+    money -= price;
+  } else if (fields[i]) {
+    fields[i] = "";
+    money += 20;
+  }
+  document.getElementById("money").textContent = money;
+  save();
+  render();
 }
 
 render();
