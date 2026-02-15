@@ -8,103 +8,213 @@
 <style>
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 body {
+  margin: 0;
   min-height: 100vh;
-  background: url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center/cover no-repeat;
+  background: linear-gradient(#4e7c1f, #2e5a12);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* ⬇️ ПЛЪТЕН КОНТЕЙНЕР (НЕПРОЗРАЧЕН) */
 .game {
   width: 100%;
   max-width: 420px;
-  background: #6b8e23; /* ПЛЪТЕН ЦВЯТ */
-  border-radius: 24px;
-  padding: 20px;
+  padding: 16px;
+  background: #3f6f1f;
 }
 
-/* HEADER */
 .header {
   text-align: center;
-  color: #fff;
-  margin-bottom: 16px;
-}
-
-.header h1 {
-  font-size: 28px;
-  margin-bottom: 8px;
+  color: white;
+  margin-bottom: 12px;
 }
 
 .money {
   font-size: 18px;
+  margin-top: 6px;
 }
 
-/* GRID */
+.farm {
+  background: #2e4d14;
+  padding: 12px;
+  border-radius: 12px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  background: #6b8e23; /* ПЛЪТЕН ФОН ПОД ПОЛЕТАТА */
-  padding: 14px;
-  border-radius: 20px;
+  gap: 10px;
 }
 
-/* FIELD */
-.field {
+.plot {
   width: 100%;
-  aspect-ratio: 1;
-  background: linear-gradient(145deg, #8b5a2b, #6d3f1e);
-  border-radius: 20px;
-  box-shadow: inset 0 4px 8px rgba(255,255,255,0.15),
-              inset 0 -4px 8px rgba(0,0,0,0.25);
-}
-
-/* SHOP */
-.shop {
+  aspect-ratio: 1 / 1;
+  background: #7a4a1f;
+  border-radius: 12px;
   display: flex;
-  gap: 12px;
-  margin-top: 16px;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.shop button {
+.plot.empty {
+  background: #7a4a1f;
+}
+
+.plot.wheat {
+  background: #a97c3a;
+}
+
+.plot.carrot {
+  background: #b36b2c;
+}
+
+.plot.tomato {
+  background: #8f2e2e;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.btn {
   flex: 1;
-  padding: 14px;
-  border-radius: 18px;
+  margin: 0 4px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f1f1f1;
   border: none;
-  font-size: 16px;
-  font-weight: 600;
-  background: #f2f2f2;
-  color: #1976d2;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
-
 <div class="game">
+
   <div class="header">
-    <h1>🌾 Ферма Онлайн</h1>
-    <div class="money">💰 500</div>
+    <h2>🌾 Ферма Онлайн</h2>
+    <div class="money">💰 <span id="money">500</span></div>
   </div>
 
-  <div class="grid">
-    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
-    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
-    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
+  <div class="farm">
+    <div class="grid" id="grid"></div>
   </div>
 
-  <div class="shop">
-    <button>🌾 Пшеница</button>
-    <button>🥕 Морков</button>
-    <button>🍅 Домати</button>
+  <div class="buttons">
+    <button class="btn" onclick="selectCrop('wheat')">🌾 Пшеница</button>
+    <button class="btn" onclick="selectCrop('carrot')">🥕 Морков</button>
+    <button class="btn" onclick="selectCrop('tomato')">🍅 Домати</button>
   </div>
+
 </div>
+
+<script>
+const grid = document.getElementById("grid");
+const moneyEl = document.getElementById("money");
+
+let selectedCrop = null;
+
+let game = JSON.parse(localStorage.getItem("farmGame")) || {
+  money: 500,
+  plots: Array(12).fill(null)
+};
+
+function saveGame() {
+  localStorage.setItem("farmGame", JSON.stringify(game));
+}
+
+function render() {
+  grid.innerHTML = "";
+  moneyEl.textContent = game.money;
+
+  game.plots.forEach((plot, index) => {
+    const div = document.createElement("div");
+    div.classList.add("plot");
+
+    if (!plot) {
+      div.classList.add("empty");
+      div.textContent = "";
+    } else {
+      div.classList.add(plot.type);
+      div.textContent = plot.icon;
+    }
+
+    div.onclick = () => clickPlot(index);
+    grid.appendChild(div);
+  });
+}
+
+function selectCrop(crop) {
+  selectedCrop = crop;
+}
+
+function clickPlot(index) {
+  const plot = game.plots[index];
+
+  if (!plot && selectedCrop) {
+    plant(index);
+    return;
+  }
+
+  if (plot && plot.ready) {
+    harvest(index);
+  }
+}
+
+function plant(index) {
+  const crops = {
+    wheat: { cost: 10, time: 5000, icon: "🌱", readyIcon: "🌾", profit: 20 },
+    carrot:{ cost: 15, time: 7000, icon: "🌱", readyIcon: "🥕", profit: 30 },
+    tomato:{ cost: 20, time: 9000, icon: "🌱", readyIcon: "🍅", profit: 40 }
+  };
+
+  const crop = crops[selectedCrop];
+  if (game.money < crop.cost) return;
+
+  game.money -= crop.cost;
+  game.plots[index] = {
+    type: selectedCrop,
+    icon: crop.icon,
+    ready: false
+  };
+
+  saveGame();
+  render();
+
+  setTimeout(() => {
+    game.plots[index].icon = crop.readyIcon;
+    game.plots[index].ready = true;
+    saveGame();
+    render();
+  }, crop.time);
+}
+
+function harvest(index) {
+  const profits = {
+    wheat: 20,
+    carrot: 30,
+    tomato: 40
+  };
+
+  const crop = game.plots[index];
+  game.money += profits[crop.type];
+  game.plots[index] = null;
+
+  saveGame();
+  render();
+}
+
+render();
+</script>
 </body>
 </html>
