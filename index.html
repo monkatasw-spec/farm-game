@@ -6,45 +6,34 @@
 <title>Ферма Онлайн</title>
 
 <style>
+* { box-sizing: border-box; font-family: Arial, sans-serif; }
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: url("https://i.imgur.com/3ZQ3Z5K.jpg") no-repeat center center fixed;
-  background-size: cover;
-}
-
-.game {
-  max-width: 420px;
-  margin: 15px auto;
-  padding: 15px;
-  background: rgba(255,255,255,0.75);
-  border-radius: 22px;
-}
-
-h1 {
+  background: url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center/cover no-repeat fixed;
   text-align: center;
-  font-size: 30px;
-  margin: 5px 0;
-  color: #000;
+  color: white;
 }
 
-.money {
-  text-align: center;
+h1 { margin-top: 20px; }
+
+#money {
   font-size: 22px;
-  margin-bottom: 10px;
-  color: #000;
+  margin-bottom: 20px;
 }
 
-.field {
+.farm {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin: 15px 0;
+  grid-template-columns: repeat(4, 70px);
+  gap: 14px;
+  justify-content: center;
+  margin-bottom: 25px;
 }
 
 .plot {
-  aspect-ratio: 1 / 1;
-  background: linear-gradient(#8b5a2b, #6f421f);
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(#8b5a2b, #6b3f1f);
   border-radius: 14px;
   display: flex;
   align-items: center;
@@ -54,101 +43,114 @@ h1 {
   transition: transform 0.2s;
 }
 
-.plot:active {
-  transform: scale(0.95);
-}
+.plot:hover { transform: scale(1.05); }
 
-.plot.grow {
-  animation: grow 0.5s ease;
+.growing {
+  animation: grow 1s ease-out;
 }
 
 @keyframes grow {
-  from { transform: scale(0.7); opacity: 0; }
+  from { transform: scale(0.5); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
 .buttons {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 30px;
 }
 
 button {
-  flex: 1;
-  margin: 0 4px;
-  font-size: 16px;
-  padding: 10px 0;
+  padding: 12px 16px;
   border-radius: 14px;
   border: none;
+  font-size: 16px;
   cursor: pointer;
-  background: #fff;
+}
+
+button.active {
+  background: #4caf50;
+  color: white;
 }
 </style>
 </head>
 
 <body>
 
-<div class="game">
-  <h1>🌾 Ферма Онлайн</h1>
-  <div class="money">💰 <span id="money">500</span></div>
+<h1>🌾 Ферма Онлайн</h1>
+<div id="money">💰 500</div>
 
-  <div class="field" id="field"></div>
+<div class="farm" id="farm"></div>
 
-  <div class="buttons">
-    <button onclick="selectCrop('🌾', 20)">Пшеница</button>
-    <button onclick="selectCrop('🥕', 30)">Морков</button>
-    <button onclick="selectCrop('🍅', 40)">Домати</button>
-  </div>
+<div class="buttons">
+  <button onclick="selectCrop('🌾', 10)">🌾 Пшеница</button>
+  <button onclick="selectCrop('🥕', 15)">🥕 Морков</button>
+  <button onclick="selectCrop('🍅', 20)">🍅 Домати</button>
 </div>
 
 <script>
-let money = Number(localStorage.getItem("money")) || 500;
-let fieldData = JSON.parse(localStorage.getItem("field")) || Array(9).fill(null);
-let selected = null;
+let money = 500;
+let selectedCrop = null;
+let cropPrice = 0;
 
-const field = document.getElementById("field");
-const moneyEl = document.getElementById("money");
+const farm = document.getElementById("farm");
+const moneyDiv = document.getElementById("money");
+
+let plots = JSON.parse(localStorage.getItem("plots")) || Array(12).fill("");
 
 function save() {
+  localStorage.setItem("plots", JSON.stringify(plots));
   localStorage.setItem("money", money);
-  localStorage.setItem("field", JSON.stringify(fieldData));
 }
 
-function render() {
-  moneyEl.textContent = money;
-  field.innerHTML = "";
+function load() {
+  money = Number(localStorage.getItem("money")) || 500;
+  updateMoney();
+  drawFarm();
+}
 
-  fieldData.forEach((crop, i) => {
+function updateMoney() {
+  moneyDiv.textContent = "💰 " + money;
+}
+
+function selectCrop(icon, price) {
+  selectedCrop = icon;
+  cropPrice = price;
+  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+  event.target.classList.add("active");
+}
+
+function drawFarm() {
+  farm.innerHTML = "";
+  plots.forEach((crop, i) => {
     const div = document.createElement("div");
     div.className = "plot";
-    if (crop) {
-      div.textContent = crop.icon;
-      div.onclick = () => harvest(i);
-    } else {
-      div.onclick = () => plant(i);
-    }
-    field.appendChild(div);
+    div.textContent = crop;
+    div.onclick = () => clickPlot(i);
+    farm.appendChild(div);
   });
 }
 
-function selectCrop(icon, profit) {
-  selected = { icon, profit };
+function clickPlot(i) {
+  if (!plots[i] && selectedCrop && money >= cropPrice) {
+    money -= cropPrice;
+    plots[i] = selectedCrop;
+    updateMoney();
+    save();
+    drawFarm();
+    farm.children[i].classList.add("growing");
+  } 
+  else if (plots[i]) {
+    money += cropPrice * 2;
+    plots[i] = "";
+    updateMoney();
+    save();
+    drawFarm();
+  }
 }
 
-function plant(i) {
-  if (!selected || fieldData[i]) return;
-  fieldData[i] = selected;
-  save();
-  render();
-}
-
-function harvest(i) {
-  money += fieldData[i].profit;
-  fieldData[i] = null;
-  save();
-  render();
-}
-
-render();
+load();
 </script>
 
 </body>
