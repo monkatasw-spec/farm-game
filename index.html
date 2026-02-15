@@ -1,218 +1,165 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ферма Онлайн</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Farm Game</title>
 
 <style>
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:url("grass.JPG") repeat;
-  background-size:220px 220px;
-  font-family:Arial, sans-serif;
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url("grass.JPG") center / cover no-repeat fixed;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-#game{
-  background:rgba(0,0,0,0.25);
-  backdrop-filter:blur(4px);
-  padding:20px;
-  border-radius:22px;
-  width:95%;
-  max-width:420px;
+#game {
+  background: rgba(255,255,255,0.85);
+  padding: 20px;
+  border-radius: 16px;
 }
 
-#header{
-  text-align:center;
-  color:white;
-  margin-bottom:16px;
+#toolbar {
+  text-align: center;
+  margin-bottom: 15px;
 }
 
-#money{
-  opacity:0.9;
+button {
+  font-size: 22px;
+  margin: 5px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
 }
 
-/* ПОЛЕТА */
-#fields{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:14px;
+#farm {
+  display: grid;
+  grid-template-columns: repeat(3, 90px);
+  gap: 14px;
+  justify-content: center;
 }
 
-.field{
-  aspect-ratio:1/1;
-  background:linear-gradient(#6b4a2e,#4b2f18);
-  border-radius:16px;
-  box-shadow:
-    inset 0 4px 6px rgba(255,255,255,0.15),
-    inset 0 -6px 8px rgba(0,0,0,0.45),
-    0 6px 10px rgba(0,0,0,0.4);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  font-size:36px;
-  cursor:pointer;
-  transition:filter .3s;
+.plot {
+  width: 90px;
+  height: 90px;
+  background: #8b5a2b;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+  cursor: pointer;
+  position: relative;
 }
 
-.field.growing{ filter:brightness(0.85); }
-.field.ready{ filter:brightness(1.3); }
-
-/* БУТОНИ */
-#actions{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  margin-top:16px;
+.crop {
+  animation: grow 0.4s ease-out;
 }
 
-button{
-  padding:10px 14px;
-  border:none;
-  border-radius:12px;
-  font-size:16px;
-  cursor:pointer;
+.crop.ready {
+  animation: sway 2.5s infinite ease-in-out;
+}
+
+.crop.harvest {
+  animation: pop 0.25s ease-out forwards;
+}
+
+@keyframes grow {
+  from { transform: scale(0.2); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sway {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(1deg); }
+  50% { transform: rotate(0deg); }
+  75% { transform: rotate(-1deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pop {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(1.4); opacity: 0; }
 }
 </style>
 </head>
 
 <body>
-
 <div id="game">
-  <div id="header">
-    <h2>🌾 Ферма Онлайн</h2>
-    <div id="money">💰 <span id="coins">0</span></div>
+  <div id="toolbar">
+    <button onclick="selectCrop('🌾',3000)">🌾</button>
+    <button onclick="selectCrop('🥕',6000)">🥕</button>
+    <button onclick="selectCrop('🍅',9000)">🍅</button>
   </div>
 
-  <div id="fields"></div>
-
-  <div id="actions">
-    <button onclick="selectCrop('wheat')">🌾 Пшеница</button>
-    <button onclick="selectCrop('carrot')">🥕 Морков</button>
-    <button onclick="selectCrop('tomato')">🍅 Домати</button>
-  </div>
+  <div id="farm"></div>
 </div>
 
 <script>
-/* ===== КУЛТУРИ ===== */
-const crops = {
-  wheat:  { icon:'🌾', cost:10, time:3000, reward:25 },
-  carrot: { icon:'🥕', cost:15, time:6000, reward:50 },
-  tomato: { icon:'🍅', cost:20, time:9000, reward:90 }
-};
+const farm = document.getElementById("farm");
+let selectedCrop = null;
+let growTime = 0;
 
-const fieldsEl = document.getElementById("fields");
-const coinsEl = document.getElementById("coins");
+const plots = JSON.parse(localStorage.getItem("plots")) || Array(9).fill(null);
 
-let selected = null;
+function selectCrop(icon, time) {
+  selectedCrop = icon;
+  growTime = time;
+}
 
-/* ===== SAVE / LOAD ===== */
-let save = JSON.parse(localStorage.getItem("farm_save")) || {
-  coins: 500,
-  fields: Array(12).fill(null)
-};
+function save() {
+  localStorage.setItem("plots", JSON.stringify(plots));
+}
 
-coinsEl.textContent = save.coins;
+function render() {
+  farm.innerHTML = "";
+  plots.forEach((plot, i) => {
+    const div = document.createElement("div");
+    div.className = "plot";
 
-/* ===== СЪЗДАВАНЕ НА ПОЛЕТА ===== */
-save.fields.forEach((data, index)=>{
-  const f = document.createElement("div");
-  f.className = "field";
-  f.onclick = ()=>handleField(f, index);
-  fieldsEl.appendChild(f);
+    if (plot) {
+      const span = document.createElement("span");
+      span.textContent = plot.icon;
+      span.className = "crop";
 
-  if(data){
-    f.textContent = crops[data.crop].icon;
-    f.dataset.crop = data.crop;
+      if (Date.now() >= plot.readyAt) {
+        span.classList.add("ready");
+        div.onclick = () => harvest(i, span);
+      }
 
-    const elapsed = Date.now() - data.plantedAt;
-    if(elapsed >= crops[data.crop].time){
-      f.dataset.state="ready";
-      f.classList.add("ready");
-    }else{
-      f.dataset.state="growing";
-      f.classList.add("growing");
-      setTimeout(()=>{
-        f.dataset.state="ready";
-        f.classList.remove("growing");
-        f.classList.add("ready");
-        saveGame();
-      }, crops[data.crop].time - elapsed);
+      div.appendChild(span);
+    } else {
+      div.onclick = () => plant(i);
     }
-  }else{
-    f.dataset.state="empty";
-  }
-});
 
-/* ===== ИЗБОР НА КУЛТУРА ===== */
-function selectCrop(type){
-  selected = type;
+    farm.appendChild(div);
+  });
 }
 
-/* ===== ЛОГИКА НА ПОЛЕТО ===== */
-function handleField(field, index){
-  if(field.dataset.state==="empty"){
-    plant(field, index);
-  }else if(field.dataset.state==="ready"){
-    harvest(field, index);
-  }
-}
-
-/* ===== ЗАСАЖДАНЕ ===== */
-function plant(field, index){
-  if(!selected) return;
-
-  const crop = crops[selected];
-  if(save.coins < crop.cost) return;
-
-  save.coins -= crop.cost;
-  coinsEl.textContent = save.coins;
-
-  field.textContent = crop.icon;
-  field.dataset.state="growing";
-  field.dataset.crop=selected;
-  field.classList.add("growing");
-
-  save.fields[index] = {
-    crop:selected,
-    plantedAt:Date.now()
+function plant(i) {
+  if (!selectedCrop) return;
+  plots[i] = {
+    icon: selectedCrop,
+    readyAt: Date.now() + growTime
   };
-
-  saveGame();
-
-  setTimeout(()=>{
-    field.dataset.state="ready";
-    field.classList.remove("growing");
-    field.classList.add("ready");
-    saveGame();
-  }, crop.time);
+  save();
+  render();
 }
 
-/* ===== ОБИРАНЕ ===== */
-function harvest(field, index){
-  const crop = crops[field.dataset.crop];
-
-  save.coins += crop.reward;
-  coinsEl.textContent = save.coins;
-
-  field.textContent="";
-  field.dataset.state="empty";
-  field.dataset.crop="";
-  field.classList.remove("ready");
-
-  save.fields[index] = null;
-  saveGame();
+function harvest(i, el) {
+  el.classList.add("harvest");
+  setTimeout(() => {
+    plots[i] = null;
+    save();
+    render();
+  }, 250);
 }
 
-/* ===== ЗАПАЗВАНЕ ===== */
-function saveGame(){
-  localStorage.setItem("farm_save", JSON.stringify(save));
-}
+render();
 </script>
-
 </body>
 </html>
