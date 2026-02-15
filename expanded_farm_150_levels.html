@@ -1,238 +1,57 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-<meta charset="UTF-8">
-<title>Ферма Онлайн</title>
+  <meta charset="UTF-8">
+  <title>Farm Game</title>
 
-<style>
-html,body{
-  margin:0;
-  padding:0;
-  height:100%;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-}
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
 
-/* 🌱 HAY DAY STYLE GRASS (GAME STYLE, NOT PHOTO) */
-body{
-  background-color:#9bdc6f;
-  background-image:
-    radial-gradient(circle at 25% 30%, rgba(255,255,255,0.18) 1px, transparent 1px),
-    radial-gradient(circle at 70% 60%, rgba(0,0,0,0.08) 1px, transparent 1px),
-    radial-gradient(circle at 45% 80%, rgba(255,255,255,0.12) 1px, transparent 1px),
-    radial-gradient(circle at 80% 20%, rgba(0,0,0,0.06) 1px, transparent 1px);
-  background-size: 20px 20px;
-  text-align:center;
-}
+    body {
+      /* ТРЕВАТА */
+      background-image: url("grass.JPG");
+      background-repeat: repeat;
+      background-size: 256px 256px;
 
-/* HEADER */
-h2{
-  margin:12px 0 6px;
-  color:#2f5d2f;
-  text-shadow:0 2px 2px rgba(255,255,255,.6);
-}
+      font-family: Arial, sans-serif;
+    }
 
-#top{
-  margin-bottom:10px;
-  font-size:18px;
-  color:#1f3d1f;
-}
+    /* Игрално поле */
+    .farm {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-/* GAME */
-#game{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-
-/* FARM AREA */
-#farm{
-  display:grid;
-  grid-template-columns:repeat(6,78px);
-  gap:10px;
-  padding:16px;
-  background:rgba(150,205,110,.85);
-  border-radius:22px;
-  box-shadow:0 10px 25px rgba(0,0,0,.25);
-}
-
-/* PLOTS */
-.plot{
-  width:78px;
-  height:78px;
-  background:#7a4b26;
-  border-radius:14px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.15),
-    inset 0 -3px 5px rgba(0,0,0,.35),
-    0 4px 6px rgba(0,0,0,.35);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  cursor:pointer;
-  transition:transform .15s ease;
-}
-
-.plot:active{transform:scale(.95);}
-
-.plot.growing{
-  animation:grow 2s ease-in-out infinite;
-}
-
-.plot.ready{
-  box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.2),
-    inset 0 -3px 5px rgba(0,0,0,.35),
-    0 0 0 2px rgba(255,215,0,.7);
-}
-
-@keyframes grow{
-  0%{transform:scale(1);}
-  50%{transform:scale(1.05);}
-  100%{transform:scale(1);}
-}
-
-/* HARVEST */
-.harvest{
-  animation:harvest .35s ease-out;
-}
-@keyframes harvest{
-  0%{transform:scale(1);}
-  60%{transform:scale(1.15);}
-  100%{transform:scale(0);}
-}
-
-/* COINS */
-.coin-float{
-  position:absolute;
-  font-size:14px;
-  animation:coinUp .9s ease-out forwards;
-  pointer-events:none;
-}
-@keyframes coinUp{
-  0%{opacity:1;transform:translateY(0);}
-  100%{opacity:0;transform:translateY(-28px);}
-}
-
-/* MENU */
-#menu{
-  margin-top:12px;
-}
-.seed{
-  display:inline-block;
-  padding:6px 12px;
-  margin:4px;
-  background:#fff;
-  border-radius:12px;
-  cursor:pointer;
-  font-size:14px;
-  border:2px solid transparent;
-}
-.seed.active{
-  border-color:#3e8f3e;
-  background:#e8f6e8;
-}
-</style>
+    /* Централна карта (примерна) */
+    .field {
+      width: 80%;
+      height: 80%;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 28px;
+      text-shadow: 1px 1px 3px #000;
+    }
+  </style>
 </head>
 
 <body>
-<h2>🌾 Ферма Онлайн</h2>
-<div id="top">💰 <span id="coins">0</span></div>
-
-<div id="game">
-  <div id="farm"></div>
-  <div id="menu"></div>
-</div>
-
-<script>
-const seeds=[
- {id:0,name:"Пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
- {id:1,name:"Моркови",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
- {id:2,name:"Домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
-];
-
-let state=JSON.parse(localStorage.getItem("farmSave"))||{
- coins:50,
- plots:Array(36).fill(null)
-};
-
-let selectedSeed=seeds[0];
-const farm=document.getElementById("farm");
-const menu=document.getElementById("menu");
-const coinsEl=document.getElementById("coins");
-
-function save(){localStorage.setItem("farmSave",JSON.stringify(state));}
-function updateCoins(){coinsEl.textContent=state.coins;}
-
-function buildFarm(){
- farm.innerHTML="";
- state.plots.forEach((p,i)=>{
-  const d=document.createElement("div");
-  d.className="plot";
-  if(p) restore(d,p,i);
-  else d.onclick=()=>plant(d,i);
-  farm.appendChild(d);
- });
-}
-
-seeds.forEach((s,i)=>{
- const b=document.createElement("span");
- b.className="seed"+(i===0?" active":"");
- b.textContent=s.emoji[2]+" "+s.name;
- b.onclick=()=>{
-  selectedSeed=s;
-  document.querySelectorAll(".seed").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active");
- };
- menu.appendChild(b);
-});
-
-function plant(p,i){
- if(state.plots[i]||state.coins<selectedSeed.cost)return;
- state.coins-=selectedSeed.cost;
- state.plots[i]={seedId:selectedSeed.id,plantedAt:Date.now()};
- save();updateCoins();grow(p,i);
-}
-
-function grow(p,i){
- const d=state.plots[i],s=seeds[d.seedId],e=Date.now()-d.plantedAt;
- p.className="plot growing";
- p.textContent=s.emoji[0];
- if(e>=s.time){ready(p,i);return;}
- if(e>=s.time/2)p.textContent=s.emoji[1];
- setTimeout(()=>{if(state.plots[i])p.textContent=s.emoji[1];},Math.max(0,s.time/2-e));
- setTimeout(()=>{if(state.plots[i])ready(p,i);},Math.max(0,s.time-e));
-}
-
-function ready(p,i){
- const s=seeds[state.plots[i].seedId];
- p.className="plot ready";
- p.textContent=s.emoji[2];
- p.onclick=()=>{
-  p.classList.add("harvest");
-  const c=document.createElement("div");
-  c.className="coin-float";
-  c.textContent="+"+s.reward+" 💰";
-  p.appendChild(c);
-  setTimeout(()=>{
-    state.coins+=s.reward;
-    state.plots[i]=null;
-    save();updateCoins();
-    p.className="plot";
-    p.textContent="";
-    p.onclick=()=>plant(p,i);
-  },350);
- };
-}
-
-function restore(p,d,i){
- const s=seeds[d.seedId];
- if(Date.now()-d.plantedAt>=s.time)ready(p,i);
- else grow(p,i);
-}
-
-updateCoins();
-buildFarm();
-</script>
+  <div class="farm">
+    <div class="field">
+      🌱 Farm Game 🌱
+    </div>
+  </div>
 </body>
 </html>
