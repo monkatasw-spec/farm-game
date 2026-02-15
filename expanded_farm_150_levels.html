@@ -3,172 +3,81 @@
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
-<title>Ферма Онлайн 150 Нива - Разширена</title>
+<title>Ферма Онлайн</title>
 <style>
-body { font-family: sans-serif; background: #cce7a1; text-align: center; margin: 0; }
-#coins, #level { font-size: 20px; margin: 10px; }
-#farm { display: grid; grid-template-columns: repeat(8, 70px); grid-gap: 5px; justify-content: center; margin-top: 20px; }
-.plot { width: 70px; height: 70px; background: #8b5a2b; display: flex; justify-content: center; align-items: flex-end; color: white; font-weight: bold; cursor: pointer; position: relative; font-size: 28px; transition: all 0.5s ease; border-radius: 5px; }
-#menu { margin-top: 20px; max-width: 700px; overflow-x: auto; white-space: nowrap; }
-.seed { display: inline-block; margin: 0 5px; cursor: pointer; font-weight: bold; font-size: 18px; }
-#actions { margin-top: 10px; }
-button { font-size: 16px; padding: 5px 10px; margin: 5px; cursor: pointer; }
+body { font-family:sans-serif; background:#cce7a1; text-align:center; margin:0; }
+#coins,#level{font-size:20px;margin:10px;}
+#farm{display:grid;grid-template-columns:repeat(8,70px);gap:5px;justify-content:center;}
+.plot{width:70px;height:70px;background:#8b5a2b;border-radius:6px;
+display:flex;align-items:flex-end;justify-content:center;font-size:28px;cursor:pointer;}
+.seed{display:inline-block;padding:6px 8px;margin:4px;border:2px solid transparent;border-radius:6px;}
+.seed.active{border-color:green;background:#eaffea;}
 </style>
 </head>
 <body>
-<h1>Ферма Онлайн 🌾 150 Нива - Разширена</h1>
+
+<h2>Ферма Онлайн 🌾</h2>
 <div id="coins">Монети: 50</div>
 <div id="level">Ниво: 1</div>
+
 <div id="farm"></div>
 <div id="menu"></div>
-<div id="actions">
-<button id="waterBtn">💧 Поливане</button>
-<button id="feedBtn">🍽️ Храна за животни</button>
-</div>
 
 <script>
-let coins = parseInt(localStorage.getItem('coins')) || 50;
-let level = parseInt(localStorage.getItem('level')) || 1;
-let selectedSeed = allSeeds[0]; // 🌾 пшеница по подразбиране
+let coins = 50;
+let level = 1;
 
-const farm = document.getElementById('farm');
-const menu = document.getElementById('menu');
-const coinsDisplay = document.getElementById('coins');
-const levelDisplay = document.getElementById('level');
-
-const allSeeds = [
-  // растения
-  {name:"пшеница", emoji:"🌾", cost:5, grow:5, reward:10, unlock:1},
-  {name:"морков", emoji:"🥕", cost:15, grow:10, reward:25, unlock:1},
-  {name:"домати", emoji:"🍅", cost:30, grow:15, reward:50, unlock:1},
-  {name:"боб", emoji:"🫘", cost:20, grow:12, reward:40, unlock:2},
-  {name:"царевица", emoji:"🌽", cost:25, grow:15, reward:50, unlock:5},
-  {name:"тиква", emoji:"🎃", cost:35, grow:18, reward:70, unlock:10},
-  {name:"ябълка", emoji:"🍎", cost:40, grow:20, reward:80, unlock:15},
-  {name:"грозде", emoji:"🍇", cost:45, grow:22, reward:90, unlock:20},
-  {name:"ягода", emoji:"🍓", cost:50, grow:25, reward:100, unlock:25},
-  {name:"лавандула", emoji:"🌸", cost:55, grow:28, reward:120, unlock:30},
-  {name:"чушки", emoji:"🌶️", cost:60, grow:30, reward:140, unlock:35},
-  {name:"краставица", emoji:"🥒", cost:65, grow:32, reward:150, unlock:40},
-  {name:"банан", emoji:"🍌", cost:70, grow:35, reward:180, unlock:50},
-  {name:"папая", emoji:"🥭", cost:75, grow:38, reward:200, unlock:60},
-  // животни
-  {name:"кокошка", emoji:"🐔", cost:50, grow:20, reward:100, unlock:1, type:"animal"},
-  {name:"коза", emoji:"🐐", cost:100, grow:30, reward:200, unlock:1, type:"animal"},
-  {name:"магаре", emoji:"🐴", cost:200, grow:45, reward:500, unlock:1, type:"animal"},
-  {name:"свиня", emoji:"🐖", cost:250, grow:50, reward:600, unlock:10, type:"animal"},
-  {name:"патица", emoji:"🦆", cost:300, grow:55, reward:700, unlock:15, type:"animal"},
-  {name:"пчела", emoji:"🐝", cost:350, grow:60, reward:800, unlock:20, type:"animal"},
-  {name:"овца", emoji:"🐑", cost:400, grow:65, reward:900, unlock:25, type:"animal"},
-  {name:"заек", emoji:"🐇", cost:450, grow:70, reward:1000, unlock:30, type:"animal"},
-  {name:"куче", emoji:"🐕", cost:500, grow:75, reward:1100, unlock:35, type:"animal"},
-  {name:"котка", emoji:"🐈", cost:550, grow:80, reward:1200, unlock:40, type:"animal"},
-  {name:"кон", emoji:"🐎", cost:600, grow:85, reward:1300, unlock:45, type:"animal"},
-  {name:"попугай", emoji:"🦜", cost:650, grow:90, reward:1400, unlock:50, type:"animal"},
-  {name:"елен", emoji:"🦌", cost:700, grow:95, reward:1500, unlock:55, type:"animal"},
-  {name:"камила", emoji:"🐫", cost:750, grow:100, reward:1600, unlock:60, type:"animal"}
+const seeds = [
+ {name:"пшеница",emoji:"🌾",cost:5,reward:10},
+ {name:"морков",emoji:"🥕",cost:15,reward:25},
+ {name:"домати",emoji:"🍅",cost:30,reward:50}
 ];
 
-let farmPlots = [];
+let selectedSeed = seeds[0];
 
-// Създаваме 64 парцела 8x8
+const farm=document.getElementById("farm");
+const menu=document.getElementById("menu");
+const coinsEl=document.getElementById("coins");
+
+function update(){
+ coinsEl.textContent="Монети: "+coins;
+}
+
 for(let i=0;i<64;i++){
-  const plot = document.createElement('div');
-  plot.classList.add('plot');
-  plot.dataset.grown="false";
-  farm.appendChild(plot);
-  farmPlots.push(plot);
+ const d=document.createElement("div");
+ d.className="plot";
+ d.onclick=()=>plant(d);
+ farm.appendChild(d);
 }
 
-// Обновяване на менюто според ниво
-function updateMenu(){
-  menu.innerHTML = "";
-  allSeeds.forEach(seed=>{
-    if(seed.unlock <= level){
-      const span = document.createElement('span');
-      span.classList.add('seed');
-      span.dataset.name = seed.name;
-      span.textContent = seed.emoji + " " + seed.name;
-      span.addEventListener('click',()=>{
-  selectedSeed = seed;
-});
-      menu.appendChild(span);
-    }
-  });
-}
-
-// Обновяване на дисплея
-function updateDisplay(){
-  coinsDisplay.textContent="Монети: "+coins;
-  levelDisplay.textContent="Ниво: "+level;
-  localStorage.setItem('coins',coins);
-  localStorage.setItem('level',level);
-  updateMenu();
-}
-
-// Поливане
-document.getElementById('waterBtn').addEventListener('click',()=>{
-  farmPlots.forEach(plot=>{
-    if(plot.dataset.grown==="true"){
-      plot.style.border="3px solid blue";
-      setTimeout(()=>plot.style.border="",500);
-    }
-  });
+seeds.forEach((s,i)=>{
+ const span=document.createElement("span");
+ span.className="seed"+(i===0?" active":"");
+ span.textContent=s.emoji+" "+s.name;
+ span.onclick=()=>{
+  selectedSeed=s;
+  document.querySelectorAll(".seed").forEach(x=>x.classList.remove("active"));
+  span.classList.add("active");
+ };
+ menu.appendChild(span);
 });
 
-// Храна за животни
-document.getElementById('feedBtn').addEventListener('click',()=>{
-  farmPlots.forEach(plot=>{
-    if(plot.dataset.grown==="true" && plot.dataset.type==="animal"){
-      coins +=10;
-    }
-  });
-  updateDisplay();
-});
-
-// Засаждане и събиране
-function plantOrHarvest(plot){
-  let seed = selectedSeed;
-  if(!seed) return;
-  if(plot.dataset.grown==="false"){
-    if(coins<seed.cost) return alert("Нямаш достатъчно монети!");
-    coins -= seed.cost;
-    plot.dataset.grown="true";
-    plot.dataset.type=seed.type||"plant";
-    plot.textContent=seed.emoji;
-    plot.style.transform="scale(0.5)";
-    updateDisplay();
-    let growStep=0;
-    let growInterval = setInterval(()=>{
-      growStep+=0.05;
-      plot.style.transform=`scale(${0.5+growStep})`;
-      if(growStep>=1) clearInterval(growInterval);
-    },seed.grow*10);
-    setTimeout(()=>{
-      plot.addEventListener('click',()=>harvest(plot,seed.reward));
-    },seed.grow*1000);
-  }
+function plant(plot){
+ if(plot.textContent) return;
+ if(coins < selectedSeed.cost){ alert("Нямаш монети"); return; }
+ coins -= selectedSeed.cost;
+ plot.textContent = selectedSeed.emoji;
+ update();
+ setTimeout(()=>{
+  plot.onclick=()=>{
+   plot.textContent="";
+   coins += selectedSeed.reward;
+   update();
+  };
+ },1500);
 }
 
-function harvest(plot,reward){
-  coins += reward;
-  plot.dataset.grown="false";
-  plot.dataset.type="";
-  plot.textContent="";
-  plot.style.transform="scale(1)";
-  updateDisplay();
-  if(coins >= level*200){
-    level++;
-    alert("Повишихте ниво до "+level+" 🎉");
-    updateDisplay();
-  }
-}
-
-farmPlots.forEach(plot=>{
-  plot.addEventListener('click',()=>plantOrHarvest(plot));
-});
-
-updateDisplay();
+update();
 </script>
 </body>
 </html>
