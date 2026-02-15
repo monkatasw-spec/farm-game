@@ -6,26 +6,20 @@
 <style>
 body{
   margin:0;
-  font-family:sans-serif;
-  background:
-    repeating-linear-gradient(
-      45deg,
-      #6fbf4b,
-      #6fbf4b 10px,
-      #68b444 10px,
-      #68b444 20px
-    );
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:#7ecb6f;
   text-align:center;
 }
 
 h2{
-  margin:10px 0;
-  color:#2f4f1f;
+  margin:12px 0 6px;
+  color:#2f5d2f;
 }
 
 #top{
   font-size:18px;
   margin-bottom:10px;
+  color:#1f3d1f;
 }
 
 #game{
@@ -34,103 +28,84 @@ h2{
   align-items:center;
 }
 
-/* --- FARM GRID --- */
+/* FARM */
 #farm{
   display:grid;
-  grid-template-columns:repeat(6,80px);
-  gap:12px;
+  grid-template-columns:repeat(6,78px);
+  gap:10px;
   padding:14px;
-  background:rgba(255,255,255,0.15);
-  border-radius:18px;
-  box-shadow:0 8px 20px rgba(0,0,0,.2);
+  background:#6fbf5a;
+  border-radius:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,.2);
 }
 
-/* --- PLOT --- */
+/* PLOT */
 .plot{
-  width:80px;
-  height:80px;
-  border-radius:10px;
-  position:relative;
-  cursor:pointer;
+  width:78px;
+  height:78px;
+  background:#8b5a2b;
+  border-radius:12px;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.15),
+    inset 0 -2px 4px rgba(0,0,0,.25),
+    0 3px 5px rgba(0,0,0,.25);
   display:flex;
   align-items:center;
   justify-content:center;
   font-size:30px;
-  overflow:hidden;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #7b4a1e,
-      #7b4a1e 6px,
-      #6a3f18 6px,
-      #6a3f18 12px
-    );
-  box-shadow:
-    inset 0 2px 3px rgba(255,255,255,.2),
-    inset 0 -3px 4px rgba(0,0,0,.3),
-    0 4px 6px rgba(0,0,0,.25);
+  cursor:pointer;
+  transition:transform .15s ease;
 }
 
-/* slight variation per plot */
-.plot:nth-child(even){
-  filter:brightness(1.03);
-}
-.plot:nth-child(odd){
-  filter:brightness(0.97);
+.plot:active{
+  transform:scale(0.95);
 }
 
-/* --- STATES --- */
+/* STATES */
 .plot.growing{
-  animation:growPulse 1.6s infinite;
+  animation:grow 2s ease-in-out infinite;
 }
 
 .plot.ready{
-  animation:wind 3s ease-in-out infinite;
   box-shadow:
-    inset 0 2px 3px rgba(255,255,255,.25),
-    inset 0 -3px 4px rgba(0,0,0,.35),
-    0 0 10px rgba(255,215,0,.8);
+    inset 0 2px 0 rgba(255,255,255,.2),
+    inset 0 -2px 4px rgba(0,0,0,.3),
+    0 0 0 2px rgba(255,215,0,.8);
 }
 
-@keyframes growPulse{
+@keyframes grow{
   0%{transform:scale(1);}
-  50%{transform:scale(1.06);}
+  50%{transform:scale(1.05);}
   100%{transform:scale(1);}
 }
 
-@keyframes wind{
-  0%{transform:rotate(0deg);}
-  50%{transform:rotate(2deg);}
-  100%{transform:rotate(0deg);}
-}
-
-/* --- HARVEST --- */
+/* HARVEST */
 .harvest{
-  animation:harvest 0.4s ease-out;
+  animation:harvest .35s ease-out;
 }
 
 @keyframes harvest{
   0%{transform:scale(1);}
-  50%{transform:scale(1.2);}
+  60%{transform:scale(1.15);}
   100%{transform:scale(0);}
 }
 
-/* --- COIN --- */
+/* COIN */
 .coin-float{
   position:absolute;
   font-size:14px;
-  animation:coinUp 1s ease-out forwards;
+  animation:coinUp .9s ease-out forwards;
   pointer-events:none;
 }
 
 @keyframes coinUp{
   0%{opacity:1;transform:translateY(0);}
-  100%{opacity:0;transform:translateY(-30px);}
+  100%{opacity:0;transform:translateY(-25px);}
 }
 
-/* --- MENU --- */
+/* MENU */
 #menu{
-  margin-top:14px;
+  margin-top:12px;
 }
 
 .seed{
@@ -138,14 +113,15 @@ h2{
   padding:6px 10px;
   margin:4px;
   background:#fff;
-  border-radius:8px;
+  border-radius:10px;
   cursor:pointer;
   border:2px solid transparent;
+  font-size:14px;
 }
 
 .seed.active{
-  border-color:green;
-  background:#eaffea;
+  border-color:#3a8f3a;
+  background:#e8f6e8;
 }
 </style>
 </head>
@@ -161,9 +137,9 @@ h2{
 
 <script>
 const seeds=[
- {id:0,name:"пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
- {id:1,name:"морков",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
- {id:2,name:"домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
+ {id:0,name:"Пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
+ {id:1,name:"Моркови",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
+ {id:2,name:"Домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
 ];
 
 let state=JSON.parse(localStorage.getItem("farmSave"))||{
@@ -267,7 +243,7 @@ function readyPlot(plot,index){
     plot.className="plot";
     plot.textContent="";
     plot.onclick=()=>plant(plot,index);
-  },400);
+  },350);
  };
 }
 
