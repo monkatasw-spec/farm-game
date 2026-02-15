@@ -10,18 +10,32 @@ body{
   background:linear-gradient(#7ec850,#5fa63a);
   text-align:center;
 }
-h2{margin:10px;color:#2f4f1f;}
-#top{font-size:18px;margin-bottom:10px;}
+
+h2{
+  margin:10px 0;
+  color:#2f4f1f;
+}
+
+#top{
+  font-size:18px;
+  margin-bottom:10px;
+}
+
+#game{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
 
 #farm{
-  margin:20px auto;
   display:grid;
   grid-template-columns:repeat(6,80px);
   gap:10px;
 }
 
 .plot{
-  width:80px;height:80px;
+  width:80px;
+  height:80px;
   background:linear-gradient(#7a4a1e,#5a3512);
   border-radius:12px;
   box-shadow:inset 0 4px 6px rgba(0,0,0,.3);
@@ -77,7 +91,10 @@ h2{margin:10px;color:#2f4f1f;}
   100%{opacity:0;transform:translateY(-30px);}
 }
 
-#menu{margin:10px;}
+#menu{
+  margin-top:12px;
+}
+
 .seed{
   display:inline-block;
   padding:6px 10px;
@@ -87,6 +104,7 @@ h2{margin:10px;color:#2f4f1f;}
   cursor:pointer;
   border:2px solid transparent;
 }
+
 .seed.active{
   border-color:green;
   background:#eaffea;
@@ -98,8 +116,10 @@ h2{margin:10px;color:#2f4f1f;}
 <h2>🌾 Ферма Онлайн</h2>
 <div id="top">💰 <span id="coins">0</span></div>
 
-<div id="farm"></div>
-<div id="menu"></div>
+<div id="game">
+  <div id="farm"></div>
+  <div id="menu"></div>
+</div>
 
 <script>
 // ---------- DATA ----------
@@ -177,12 +197,6 @@ function growPlot(plot,index){
 
  plot.className="plot growing";
  plot.textContent=seed.emoji[0];
- plot.style.opacity=0;
- plot.style.transform="scale(0.7)";
- setTimeout(()=>{
-  plot.style.opacity=1;
-  plot.style.transform="scale(1)";
- },50);
 
  if(elapsed>=seed.time){
   readyPlot(plot,index);
