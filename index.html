@@ -8,87 +8,80 @@
 <style>
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {
-  margin: 0;
   min-height: 100vh;
-  background: url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center / cover no-repeat;
+  background: url("https://images.unsplash.com/photo-1501004318641-b39e6451bec6") center/cover no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* ОСНОВЕН КОНТЕЙНЕР – БЕЗ ПРОЗРАЧНОСТ */
+/* ⬇️ ПЛЪТЕН КОНТЕЙНЕР (НЕПРОЗРАЧЕН) */
 .game {
   width: 100%;
   max-width: 420px;
-  background: #7aa64a; /* ПЛЪТЕН ФОН */
+  background: #6b8e23; /* ПЛЪТЕН ЦВЯТ */
+  border-radius: 24px;
   padding: 20px;
-  border-radius: 20px;
 }
 
-/* ЗАГЛАВИЕ */
+/* HEADER */
 .header {
   text-align: center;
-  color: white;
+  color: #fff;
+  margin-bottom: 16px;
 }
 
 .header h1 {
-  margin: 0;
   font-size: 28px;
+  margin-bottom: 8px;
 }
 
 .money {
-  margin-top: 8px;
-  font-size: 20px;
+  font-size: 18px;
 }
 
-/* ПОЛЕТА */
-.fields {
-  margin: 20px 0;
+/* GRID */
+.grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
+  background: #6b8e23; /* ПЛЪТЕН ФОН ПОД ПОЛЕТАТА */
+  padding: 14px;
+  border-radius: 20px;
 }
 
+/* FIELD */
 .field {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  background: #8b5a2b;
-  border-radius: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 36px;
-  cursor: pointer;
-  transition: transform 0.1s;
+  aspect-ratio: 1;
+  background: linear-gradient(145deg, #8b5a2b, #6d3f1e);
+  border-radius: 20px;
+  box-shadow: inset 0 4px 8px rgba(255,255,255,0.15),
+              inset 0 -4px 8px rgba(0,0,0,0.25);
 }
 
-.field:active {
-  transform: scale(0.95);
-}
-
-/* БУТОНИ */
-.buttons {
+/* SHOP */
+.shop {
   display: flex;
   gap: 12px;
+  margin-top: 16px;
 }
 
-button {
+.shop button {
   flex: 1;
   padding: 14px;
+  border-radius: 18px;
   border: none;
-  border-radius: 16px;
-  font-size: 18px;
-  background: #f1f1f1;
-  cursor: pointer;
-}
-
-button.active {
-  background: #4caf50;
-  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  background: #f2f2f2;
+  color: #1976d2;
 }
 </style>
 </head>
@@ -98,67 +91,20 @@ button.active {
 <div class="game">
   <div class="header">
     <h1>🌾 Ферма Онлайн</h1>
-    <div class="money">💰 <span id="money">500</span></div>
+    <div class="money">💰 500</div>
   </div>
 
-  <div class="fields" id="fields"></div>
+  <div class="grid">
+    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
+    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
+    <div class="field"></div><div class="field"></div><div class="field"></div><div class="field"></div>
+  </div>
 
-  <div class="buttons">
-    <button onclick="selectCrop('🌾')">Пшеница</button>
-    <button onclick="selectCrop('🥕')">Морков</button>
-    <button onclick="selectCrop('🍅')">Домати</button>
+  <div class="shop">
+    <button>🌾 Пшеница</button>
+    <button>🥕 Морков</button>
+    <button>🍅 Домати</button>
   </div>
 </div>
-
-<script>
-const fields = document.getElementById("fields");
-const moneyEl = document.getElementById("money");
-
-let money = 500;
-let selectedCrop = null;
-let state = JSON.parse(localStorage.getItem("farm")) || Array(12).fill(null);
-
-/* СЪЗДАВАНЕ НА ПОЛЕТАТА */
-function render() {
-  fields.innerHTML = "";
-  state.forEach((crop, i) => {
-    const f = document.createElement("div");
-    f.className = "field";
-    f.textContent = crop || "";
-    f.onclick = () => clickField(i);
-    fields.appendChild(f);
-  });
-  moneyEl.textContent = money;
-}
-
-function selectCrop(crop) {
-  selectedCrop = crop;
-  document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
-}
-
-function clickField(i) {
-  if (!state[i] && selectedCrop) {
-    state[i] = selectedCrop;
-    save();
-    render();
-  } else if (state[i]) {
-    money += 50;
-    state[i] = null;
-    save();
-    render();
-  }
-}
-
-function save() {
-  localStorage.setItem("farm", JSON.stringify(state));
-  localStorage.setItem("money", money);
-}
-
-money = Number(localStorage.getItem("money")) || 500;
-
-render();
-</script>
-
 </body>
 </html>
