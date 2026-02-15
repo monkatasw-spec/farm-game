@@ -29,7 +29,7 @@ button { font-size: 16px; padding: 5px 10px; margin: 5px; cursor: pointer; }
 <script>
 let coins = parseInt(localStorage.getItem('coins')) || 50;
 let level = parseInt(localStorage.getItem('level')) || 1;
-let selectedSeed = null;
+let selectedSeed = allSeeds[0]; // 🌾 пшеница по подразбиране
 
 const farm = document.getElementById('farm');
 const menu = document.getElementById('menu');
@@ -89,7 +89,9 @@ function updateMenu(){
       span.classList.add('seed');
       span.dataset.name = seed.name;
       span.textContent = seed.emoji + " " + seed.name;
-      span.addEventListener('click',()=>selectedSeed=seed.name);
+      span.addEventListener('click',()=>{
+  selectedSeed = seed;
+});
       menu.appendChild(span);
     }
   });
@@ -126,7 +128,7 @@ document.getElementById('feedBtn').addEventListener('click',()=>{
 
 // Засаждане и събиране
 function plantOrHarvest(plot){
-  let seed = allSeeds.find(s=>s.name===selectedSeed);
+  let seed = selectedSeed;
   if(!seed) return;
   if(plot.dataset.grown==="false"){
     if(coins<seed.cost) return alert("Нямаш достатъчно монети!");
