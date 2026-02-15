@@ -12,27 +12,71 @@ body{
 }
 h2{margin:10px;color:#2f4f1f;}
 #top{font-size:18px;margin-bottom:10px;}
+
 #farm{
   margin:20px auto;
   display:grid;
   grid-template-columns:repeat(6,80px);
   gap:10px;
 }
+
 .plot{
   width:80px;height:80px;
   background:linear-gradient(#7a4a1e,#5a3512);
-  border-radius:10px;
+  border-radius:12px;
   box-shadow:inset 0 4px 6px rgba(0,0,0,.3);
-  display:flex;align-items:center;justify-content:center;
-  font-size:32px;cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:32px;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
 }
-.plot.growing{animation:pulse 1.5s infinite;}
-.plot.ready{box-shadow:0 0 10px gold;}
-@keyframes pulse{
+
+.plot.growing{
+  animation:growPulse 1.6s infinite;
+}
+
+.plot.ready{
+  box-shadow:0 0 12px gold;
+  animation:wind 3s ease-in-out infinite;
+}
+
+@keyframes growPulse{
   0%{transform:scale(1);}
-  50%{transform:scale(1.05);}
+  50%{transform:scale(1.08);}
   100%{transform:scale(1);}
 }
+
+@keyframes wind{
+  0%{transform:rotate(0deg);}
+  50%{transform:rotate(2deg);}
+  100%{transform:rotate(0deg);}
+}
+
+.harvest{
+  animation:harvest 0.4s ease-out;
+}
+
+@keyframes harvest{
+  0%{transform:scale(1);}
+  50%{transform:scale(1.2);}
+  100%{transform:scale(0);}
+}
+
+.coin-float{
+  position:absolute;
+  font-size:16px;
+  animation:coinUp 1s ease-out forwards;
+  pointer-events:none;
+}
+
+@keyframes coinUp{
+  0%{opacity:1;transform:translateY(0);}
+  100%{opacity:0;transform:translateY(-30px);}
+}
+
 #menu{margin:10px;}
 .seed{
   display:inline-block;
@@ -43,7 +87,10 @@ h2{margin:10px;color:#2f4f1f;}
   cursor:pointer;
   border:2px solid transparent;
 }
-.seed.active{border-color:green;background:#eaffea;}
+.seed.active{
+  border-color:green;
+  background:#eaffea;
+}
 </style>
 </head>
 <body>
@@ -56,32 +103,30 @@ h2{margin:10px;color:#2f4f1f;}
 
 <script>
 // ---------- DATA ----------
-const seeds = [
+const seeds=[
  {id:0,name:"пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
  {id:1,name:"морков",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
  {id:2,name:"домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
 ];
 
-// ---------- LOAD SAVE ----------
-let state = JSON.parse(localStorage.getItem("farmSave")) || {
+let state=JSON.parse(localStorage.getItem("farmSave"))||{
  coins:50,
- plots:Array(36).fill(null) // null или {seedId, plantedAt}
+ plots:Array(36).fill(null)
 };
 
-let selectedSeed = seeds[0];
+let selectedSeed=seeds[0];
 
-const farm = document.getElementById("farm");
-const menu = document.getElementById("menu");
-const coinsEl = document.getElementById("coins");
+const farm=document.getElementById("farm");
+const menu=document.getElementById("menu");
+const coinsEl=document.getElementById("coins");
 
 // ---------- SAVE ----------
 function saveGame(){
- localStorage.setItem("farmSave", JSON.stringify(state));
+ localStorage.setItem("farmSave",JSON.stringify(state));
 }
 
-// ---------- UI ----------
 function updateCoins(){
- coinsEl.textContent = state.coins;
+ coinsEl.textContent=state.coins;
 }
 
 // ---------- CREATE FARM ----------
@@ -90,13 +135,11 @@ function createFarm(){
  state.plots.forEach((p,i)=>{
   const d=document.createElement("div");
   d.className="plot";
-
   if(p){
     restorePlot(d,p,i);
-  } else {
+  }else{
     d.onclick=()=>plant(d,i);
   }
-
   farm.appendChild(d);
  });
 }
@@ -117,17 +160,10 @@ seeds.forEach((s,i)=>{
 // ---------- PLANT ----------
 function plant(plot,index){
  if(state.plots[index]) return;
- if(state.coins < selectedSeed.cost){
-  alert("Нямаш монети");
-  return;
- }
+ if(state.coins<selectedSeed.cost){alert("Нямаш монети");return;}
 
- state.coins -= selectedSeed.cost;
- state.plots[index] = {
-  seedId:selectedSeed.id,
-  plantedAt:Date.now()
- };
-
+ state.coins-=selectedSeed.cost;
+ state.plots[index]={seedId:selectedSeed.id,plantedAt:Date.now()};
  saveGame();
  updateCoins();
  growPlot(plot,index);
@@ -135,56 +171,70 @@ function plant(plot,index){
 
 // ---------- GROW ----------
 function growPlot(plot,index){
- const data = state.plots[index];
- const seed = seeds[data.seedId];
- const elapsed = Date.now() - data.plantedAt;
+ const data=state.plots[index];
+ const seed=seeds[data.seedId];
+ const elapsed=Date.now()-data.plantedAt;
 
  plot.className="plot growing";
  plot.textContent=seed.emoji[0];
+ plot.style.opacity=0;
+ plot.style.transform="scale(0.7)";
+ setTimeout(()=>{
+  plot.style.opacity=1;
+  plot.style.transform="scale(1)";
+ },50);
 
- if(elapsed >= seed.time){
+ if(elapsed>=seed.time){
   readyPlot(plot,index);
   return;
  }
 
- if(elapsed >= seed.time/2){
+ if(elapsed>=seed.time/2){
   plot.textContent=seed.emoji[1];
  }
 
  setTimeout(()=>{
   if(state.plots[index]) plot.textContent=seed.emoji[1];
- }, Math.max(0, seed.time/2 - elapsed));
+ },Math.max(0,seed.time/2-elapsed));
 
  setTimeout(()=>{
   if(state.plots[index]) readyPlot(plot,index);
- }, Math.max(0, seed.time - elapsed));
+ },Math.max(0,seed.time-elapsed));
 }
 
 // ---------- READY ----------
 function readyPlot(plot,index){
- const seed = seeds[state.plots[index].seedId];
+ const seed=seeds[state.plots[index].seedId];
  plot.className="plot ready";
  plot.textContent=seed.emoji[2];
 
  plot.onclick=()=>{
-  state.coins += seed.reward;
-  state.plots[index]=null;
-  saveGame();
-  updateCoins();
-  plot.className="plot";
-  plot.textContent="";
-  plot.onclick=()=>plant(plot,index);
+  plot.classList.add("harvest");
+
+  const coin=document.createElement("div");
+  coin.className="coin-float";
+  coin.textContent="+"+seed.reward+" 💰";
+  plot.appendChild(coin);
+
+  setTimeout(()=>{
+    state.coins+=seed.reward;
+    state.plots[index]=null;
+    saveGame();
+    updateCoins();
+    plot.className="plot";
+    plot.textContent="";
+    plot.onclick=()=>plant(plot,index);
+  },400);
  };
 }
 
 // ---------- RESTORE ----------
 function restorePlot(plot,data,index){
- const seed = seeds[data.seedId];
- const elapsed = Date.now() - data.plantedAt;
-
- if(elapsed >= seed.time){
+ const seed=seeds[data.seedId];
+ const elapsed=Date.now()-data.plantedAt;
+ if(elapsed>=seed.time){
   readyPlot(plot,index);
- } else {
+ }else{
   growPlot(plot,index);
  }
 }
