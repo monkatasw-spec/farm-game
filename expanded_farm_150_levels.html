@@ -17,39 +17,26 @@ h2{margin:10px;color:#2f4f1f;}
   display:grid;
   grid-template-columns:repeat(6,80px);
   gap:10px;
-  width:max-content;
 }
 .plot{
-  width:80px;
-  height:80px;
+  width:80px;height:80px;
   background:linear-gradient(#7a4a1e,#5a3512);
   border-radius:10px;
   box-shadow:inset 0 4px 6px rgba(0,0,0,.3);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:32px;
-  cursor:pointer;
-  transition:transform .3s;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;cursor:pointer;
 }
-.plot:hover{transform:scale(1.05);}
 .plot.growing{animation:pulse 1.5s infinite;}
 .plot.ready{box-shadow:0 0 10px gold;}
-
 @keyframes pulse{
   0%{transform:scale(1);}
   50%{transform:scale(1.05);}
   100%{transform:scale(1);}
 }
-
 #menu{margin:10px;}
 .seed{
-  display:inline-block;
-  padding:6px 10px;
-  margin:4px;
-  border-radius:8px;
-  background:#fff;
-  cursor:pointer;
+  display:inline-block;padding:6px 10px;margin:4px;
+  background:#fff;border-radius:8px;cursor:pointer;
   border:2px solid transparent;
 }
 .seed.active{border-color:green;background:#eaffea;}
@@ -59,38 +46,54 @@ h2{margin:10px;color:#2f4f1f;}
 
 <h2>🌾 Ферма Онлайн</h2>
 <div id="top">
-  <div id="coins">💰 50</div>
+  <div id="coins">💰 0</div>
 </div>
 
 <div id="farm"></div>
 <div id="menu"></div>
 
 <script>
-let coins=50;
-
+/* ---------- DATA ---------- */
 const seeds=[
- {name:"пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
- {name:"морков",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
- {name:"домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
+ {id:0,name:"пшеница",emoji:["🌱","🌿","🌾"],cost:5,reward:10,time:3000},
+ {id:1,name:"морков",emoji:["🌱","🥕","🥕"],cost:15,reward:25,time:4000},
+ {id:2,name:"домати",emoji:["🌱","🍅","🍅"],cost:30,reward:50,time:5000}
 ];
 
-let selectedSeed=seeds[0];
+let state = JSON.parse(localStorage.getItem("farmSave")) || {
+ coins:50,
+ plots:Array(36).fill(null), // null или {seedId, plantedAt}
+};
+
+let selectedSeed = seeds[0];
 
 const farm=document.getElementById("farm");
 const menu=document.getElementById("menu");
 const coinsEl=document.getElementById("coins");
 
+/* ---------- SAVE ---------- */
+function saveGame(){
+ localStorage.setItem("farmSave", JSON.stringify(state));
+}
+
+/* ---------- UI ---------- */
 function updateCoins(){
- coinsEl.textContent="💰 "+coins;
+ coinsEl.textContent="💰 "+state.coins;
 }
 
-for(let i=0;i<36;i++){
- const p=document.createElement("div");
- p.className="plot";
- p.onclick=()=>plant(p);
- farm.appendChild(p);
+/* ---------- FARM ---------- */
+function createFarm(){
+ farm.innerHTML="";
+ state.plots.forEach((p,i)=>{
+  const d=document.createElement("div");
+  d.className="plot";
+  if(p) restorePlot(d,p,i);
+  d.onclick=()=>plant(d,i);
+  farm.appendChild(d);
+ });
 }
 
+/* ---------- MENU ---------- */
 seeds.forEach((s,i)=>{
  const b=document.createElement("span");
  b.className="seed"+(i===0?" active":"");
@@ -103,37 +106,63 @@ seeds.forEach((s,i)=>{
  menu.appendChild(b);
 });
 
-function plant(plot){
- if(plot.dataset.state) return;
- if(coins < selectedSeed.cost){alert("Нямаш монети");return;}
+/* ---------- PLANT ---------- */
+function plant(plot,index){
+ if(state.plots[index]) return;
+ if(state.coins < selectedSeed.cost){alert("Нямаш монети");return;}
 
- coins-=selectedSeed.cost;
+ state.coins -= selectedSeed.cost;
+ state.plots[index] = {
+  seedId:selectedSeed.id,
+  plantedAt:Date.now()
+ };
+ saveGame();
+ renderPlot(plot,index);
  updateCoins();
-
- plot.dataset.state="growing";
- plot.classList.add("growing");
- plot.textContent=selectedSeed.emoji[0];
-
- setTimeout(()=>plot.textContent=selectedSeed.emoji[1], selectedSeed.time/2);
-
- setTimeout(()=>{
-  plot.textContent=selectedSeed.emoji[2];
-  plot.classList.remove("growing");
-  plot.classList.add("ready");
-  plot.dataset.state="ready";
-
-  plot.onclick=()=>{
-   plot.textContent="";
-   plot.className="plot";
-   plot.dataset.state="";
-   coins+=selectedSeed.reward;
-   updateCoins();
-   plot.onclick=()=>plant(plot);
-  };
- }, selectedSeed.time);
 }
 
+/* ---------- RENDER ---------- */
+function renderPlot(plot,index){
+ const data = state.plots[index];
+ const seed = seeds[data.seedId];
+ const elapsed = Date.now() - data.plantedAt;
+
+ plot.className="plot growing";
+ plot.textContent=seed.emoji[0];
+
+ if(elapsed > seed.time/2) plot.textContent=seed.emoji[1];
+ if(elapsed >= seed.time){
+  readyPlot(plot,index);
+ }else{
+  setTimeout(()=>plot.textContent=seed.emoji[1], seed.time/2 - elapsed);
+  setTimeout(()=>readyPlot(plot,index), seed.time - elapsed);
+ }
+}
+
+/* ---------- READY ---------- */
+function readyPlot(plot,index){
+ const seed = seeds[state.plots[index].seedId];
+ plot.className="plot ready";
+ plot.textContent=seed.emoji[2];
+ plot.onclick=()=>{
+  state.coins += seed.reward;
+  state.plots[index]=null;
+  saveGame();
+  updateCoins();
+  plot.className="plot";
+  plot.textContent="";
+  plot.onclick=()=>plant(plot,index);
+ };
+}
+
+/* ---------- RESTORE ---------- */
+function restorePlot(plot,data,index){
+ renderPlot(plot,index);
+}
+
+/* ---------- START ---------- */
 updateCoins();
+createFarm();
 </script>
 </body>
 </html>
