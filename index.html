@@ -6,215 +6,146 @@
 <title>Ферма Онлайн</title>
 
 <style>
-* {
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-}
-
 body {
-  margin: 0;
-  min-height: 100vh;
-  background: linear-gradient(#4e7c1f, #2e5a12);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url("https://i.imgur.com/5ZQ0X6U.jpg") no-repeat center center fixed;
+    background-size: cover;
+    text-align: center;
 }
 
-.game {
-  width: 100%;
-  max-width: 420px;
-  padding: 16px;
-  background: #3f6f1f;
+/* Заглавие */
+h1 {
+    color: white;
+    margin-top: 20px;
 }
 
-.header {
-  text-align: center;
-  color: white;
-  margin-bottom: 12px;
+/* Пари */
+#money {
+    color: white;
+    font-size: 22px;
+    margin-bottom: 20px;
 }
 
-.money {
-  font-size: 18px;
-  margin-top: 6px;
-}
-
+/* Контейнер на фермата */
 .farm {
-  background: #2e4d14;
-  padding: 12px;
-  border-radius: 12px;
+    background: #5a8f3a; /* НЕ е прозрачно */
+    padding: 20px;
+    border-radius: 20px;
+    display: inline-block;
 }
 
+/* Полета */
 .grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(4, 80px);
+    gap: 15px;
 }
 
 .plot {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: #7a4a1f;
-  border-radius: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 28px;
-  cursor: pointer;
-  user-select: none;
+    width: 80px;
+    height: 80px;
+    background: #7b4a12;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    cursor: pointer;
+    user-select: none;
 }
 
-.plot.empty {
-  background: #7a4a1f;
-}
-
-.plot.wheat {
-  background: #a97c3a;
-}
-
-.plot.carrot {
-  background: #b36b2c;
-}
-
-.plot.tomato {
-  background: #8f2e2e;
-}
-
+/* Бутони */
 .buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 14px;
+    margin-top: 20px;
 }
 
-.btn {
-  flex: 1;
-  margin: 0 4px;
-  padding: 10px;
-  border-radius: 10px;
-  background: #f1f1f1;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
+button {
+    font-size: 18px;
+    padding: 10px 15px;
+    margin: 5px;
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
 }
 </style>
 </head>
 
 <body>
-<div class="game">
 
-  <div class="header">
-    <h2>🌾 Ферма Онлайн</h2>
-    <div class="money">💰 <span id="money">500</span></div>
-  </div>
+<h1>🌾 Ферма Онлайн</h1>
+<div id="money">💰 500</div>
 
-  <div class="farm">
+<div class="farm">
     <div class="grid" id="grid"></div>
-  </div>
+</div>
 
-  <div class="buttons">
-    <button class="btn" onclick="selectCrop('wheat')">🌾 Пшеница</button>
-    <button class="btn" onclick="selectCrop('carrot')">🥕 Морков</button>
-    <button class="btn" onclick="selectCrop('tomato')">🍅 Домати</button>
-  </div>
-
+<div class="buttons">
+    <button onclick="selectCrop('🌾', 50)">Пшеница</button>
+    <button onclick="selectCrop('🥕', 80)">Морков</button>
+    <button onclick="selectCrop('🍅', 120)">Домати</button>
 </div>
 
 <script>
-const grid = document.getElementById("grid");
-const moneyEl = document.getElementById("money");
-
+let money = 500;
 let selectedCrop = null;
+let selectedPrice = 0;
 
-let game = JSON.parse(localStorage.getItem("farmGame")) || {
-  money: 500,
-  plots: Array(12).fill(null)
-};
+const grid = document.getElementById("grid");
+const moneyDiv = document.getElementById("money");
 
-function saveGame() {
-  localStorage.setItem("farmGame", JSON.stringify(game));
-}
+// Зареждане от паметта
+const savedMoney = localStorage.getItem("money");
+const savedGrid = JSON.parse(localStorage.getItem("grid"));
 
-function render() {
-  grid.innerHTML = "";
-  moneyEl.textContent = game.money;
+if (savedMoney) money = parseInt(savedMoney);
+moneyDiv.textContent = "💰 " + money;
 
-  game.plots.forEach((plot, index) => {
-    const div = document.createElement("div");
-    div.classList.add("plot");
+// Създаване на полетата
+for (let i = 0; i < 12; i++) {
+    const plot = document.createElement("div");
+    plot.className = "plot";
 
-    if (!plot) {
-      div.classList.add("empty");
-      div.textContent = "";
-    } else {
-      div.classList.add(plot.type);
-      div.textContent = plot.icon;
+    if (savedGrid && savedGrid[i]) {
+        plot.textContent = savedGrid[i];
     }
 
-    div.onclick = () => clickPlot(index);
-    grid.appendChild(div);
-  });
+    plot.onclick = () => plant(plot, i);
+    grid.appendChild(plot);
 }
 
-function selectCrop(crop) {
-  selectedCrop = crop;
+function selectCrop(crop, price) {
+    selectedCrop = crop;
+    selectedPrice = price;
 }
 
-function clickPlot(index) {
-  const plot = game.plots[index];
+function plant(plot, index) {
+    if (!selectedCrop) return;
 
-  if (!plot && selectedCrop) {
-    plant(index);
-    return;
-  }
+    if (money < selectedPrice) {
+        alert("Нямаш достатъчно пари!");
+        return;
+    }
 
-  if (plot && plot.ready) {
-    harvest(index);
-  }
-}
+    if (plot.textContent !== "") return;
 
-function plant(index) {
-  const crops = {
-    wheat: { cost: 10, time: 5000, icon: "🌱", readyIcon: "🌾", profit: 20 },
-    carrot:{ cost: 15, time: 7000, icon: "🌱", readyIcon: "🥕", profit: 30 },
-    tomato:{ cost: 20, time: 9000, icon: "🌱", readyIcon: "🍅", profit: 40 }
-  };
+    money -= selectedPrice;
+    plot.textContent = selectedCrop;
 
-  const crop = crops[selectedCrop];
-  if (game.money < crop.cost) return;
-
-  game.money -= crop.cost;
-  game.plots[index] = {
-    type: selectedCrop,
-    icon: crop.icon,
-    ready: false
-  };
-
-  saveGame();
-  render();
-
-  setTimeout(() => {
-    game.plots[index].icon = crop.readyIcon;
-    game.plots[index].ready = true;
     saveGame();
-    render();
-  }, crop.time);
+    moneyDiv.textContent = "💰 " + money;
 }
 
-function harvest(index) {
-  const profits = {
-    wheat: 20,
-    carrot: 30,
-    tomato: 40
-  };
+function saveGame() {
+    const data = [];
+    document.querySelectorAll(".plot").forEach(p => {
+        data.push(p.textContent);
+    });
 
-  const crop = game.plots[index];
-  game.money += profits[crop.type];
-  game.plots[index] = null;
-
-  saveGame();
-  render();
+    localStorage.setItem("grid", JSON.stringify(data));
+    localStorage.setItem("money", money);
 }
-
-render();
 </script>
+
 </body>
 </html>
