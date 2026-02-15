@@ -1,57 +1,96 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-  <meta charset="UTF-8">
-  <title>Farm Game</title>
+<meta charset="UTF-8">
+<title>Farm Game</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-    }
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  font-family:Arial,sans-serif;
+}
 
-    body {
-      /* ТРЕВАТА */
-      background-image: url("grass.JPG");
-      background-repeat: repeat;
-      background-size: 256px 256px;
+/* ФОН – ТРЕВА */
+body{
+  background:url("grass.JPG") repeat;
+  background-size:256px 256px;
+}
 
-      font-family: Arial, sans-serif;
-    }
+/* Център */
+.farm{
+  width:100%;
+  height:100%;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
 
-    /* Игрално поле */
-    .farm {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+/* Полета */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(5,70px);
+  gap:10px;
+  background:rgba(255,255,255,0.2);
+  padding:20px;
+  border-radius:20px;
+}
 
-    /* Централна карта (примерна) */
-    .field {
-      width: 80%;
-      height: 80%;
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 28px;
-      text-shadow: 1px 1px 3px #000;
-    }
-  </style>
+.plot{
+  width:70px;
+  height:70px;
+  background:#8b5a2b;
+  border-radius:10px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:28px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.plot.planted{
+  background:#5a8f3a;
+}
+</style>
 </head>
 
 <body>
-  <div class="farm">
-    <div class="field">
-      🌱 Farm Game 🌱
-    </div>
-  </div>
+<div class="farm">
+  <div class="grid" id="grid"></div>
+</div>
+
+<script>
+const grid = document.getElementById("grid");
+const SIZE = 25;
+
+/* Зареждане от save */
+let plots = JSON.parse(localStorage.getItem("farm_plots")) 
+            || Array(SIZE).fill(0);
+
+/* Рисуване */
+function render(){
+  grid.innerHTML = "";
+  plots.forEach((state,i)=>{
+    const d = document.createElement("div");
+    d.className = "plot" + (state ? " planted":"");
+    d.textContent = state ? "🌱":"";
+    d.onclick = ()=>{
+      plots[i] = plots[i] ? 0 : 1;
+      save();
+      render();
+    };
+    grid.appendChild(d);
+  });
+}
+
+/* Save */
+function save(){
+  localStorage.setItem("farm_plots",JSON.stringify(plots));
+}
+
+render();
+</script>
 </body>
 </html>
