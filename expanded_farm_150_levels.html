@@ -1,123 +1,146 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Ферма Онлайн</title>
 
 <style>
-/* ===== ОСНОВА ===== */
-body{
-  margin:0;
-  min-height:100vh;
-
-  display:flex;
-  justify-content:center;
-  align-items:center;
-
-  background:url("grass.JPG") repeat;
-  background-size:220px 220px;
-
-  font-family:Arial, sans-serif;
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system;
 }
 
-/* ===== КОНТЕЙНЕР НА ИГРАТА ===== */
-#game{
-  background:rgba(0,0,0,0.25);
-  backdrop-filter:blur(4px);
-  padding:20px;
-  border-radius:22px;
-  width:95%;
-  max-width:820px;
+body {
+  background: url("grass.JPG") repeat;
+  background-size: 300px 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* ===== ЗАГЛАВИЕ ===== */
-#header{
-  text-align:center;
-  color:white;
-  margin-bottom:16px;
+/* Основен панел */
+.game {
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  padding: 20px;
+  width: 95%;
+  max-width: 420px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.4);
 }
 
-#money{
-  opacity:0.9;
+.header {
+  text-align: center;
+  color: white;
+  margin-bottom: 10px;
 }
 
-/* ===== ПОЛЕТА ===== */
-#fields{
-  display:grid;
-  grid-template-columns:repeat(5, 1fr);
-  gap:18px;
-  margin-bottom:18px;
+.money {
+  opacity: 0.9;
+  margin-top: 5px;
 }
 
-.field{
-  aspect-ratio:1/1;
-  background:linear-gradient(#6b4a2e, #4b2f18);
-  border-radius:16px;
+/* Полета */
+.fields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.field {
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(#7a4a1f, #5c3816);
+  border-radius: 16px;
   box-shadow:
-    inset 0 3px 6px rgba(255,255,255,0.15),
-    inset 0 -6px 8px rgba(0,0,0,0.4),
-    0 6px 10px rgba(0,0,0,0.4);
+    inset 0 3px 6px rgba(255,255,255,.2),
+    inset 0 -6px 10px rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  cursor: pointer;
+  transition: transform .1s;
 }
 
-/* ===== БУТОНИ ===== */
-#actions{
-  display:flex;
-  justify-content:center;
-  gap:12px;
-  flex-wrap:wrap;
+.field:active {
+  transform: scale(0.95);
 }
 
-button{
-  border:none;
-  padding:10px 16px;
-  border-radius:14px;
-  font-size:15px;
-  cursor:pointer;
-  background:white;
-  box-shadow:0 4px 8px rgba(0,0,0,0.3);
+/* Бутони */
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
-button:active{
-  transform:scale(0.96);
+button {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div id="game">
-  <div id="header">
+<div class="game">
+  <div class="header">
     <h2>🌾 Ферма Онлайн</h2>
-    <div id="money">💰 500</div>
+    <div class="money">💰 <span id="money">500</span></div>
   </div>
 
-  <div id="fields">
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
+  <div class="fields" id="fields"></div>
 
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-    <div class="field"></div>
-  </div>
-
-  <div id="actions">
-    <button>🌾 Пшеница</button>
-    <button>🥕 Морков</button>
-    <button>🍅 Домати</button>
+  <div class="controls">
+    <button onclick="select('wheat')">🌾 Пшеница</button>
+    <button onclick="select('carrot')">🥕 Морков</button>
+    <button onclick="select('tomato')">🍅 Домати</button>
   </div>
 </div>
+
+<script>
+const fieldsEl = document.getElementById("fields");
+const moneyEl = document.getElementById("money");
+
+let selected = null;
+let money = 500;
+
+const crops = {
+  wheat: { icon: "🌾", cost: 10 },
+  carrot: { icon: "🥕", cost: 15 },
+  tomato: { icon: "🍅", cost: 20 }
+};
+
+// създаваме 12 полета
+for (let i = 0; i < 12; i++) {
+  const f = document.createElement("div");
+  f.className = "field";
+  f.onclick = () => plant(f);
+  fieldsEl.appendChild(f);
+}
+
+function select(type) {
+  selected = type;
+}
+
+function plant(field) {
+  if (!selected) return;
+  if (field.textContent !== "") return;
+
+  const crop = crops[selected];
+  if (money < crop.cost) return;
+
+  money -= crop.cost;
+  moneyEl.textContent = money;
+  field.textContent = crop.icon;
+}
+</script>
 
 </body>
 </html>
