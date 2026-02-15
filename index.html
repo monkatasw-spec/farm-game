@@ -21,7 +21,6 @@ body {
   align-items: center;
 }
 
-/* ⬇️ ВАЖНО: flex + column */
 .game {
   width: 92vw;
   max-width: 420px;
@@ -45,27 +44,32 @@ h1 {
   margin-bottom: 12px;
 }
 
-/* ⬇️ ПОЛЕТАТА */
+/* 🌱 ПОЛЕТАТА */
 .fields {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   justify-items: center;
   margin-bottom: 14px;
 }
 
 .field {
-  width: 80px;
-  height: 80px;
-  background: #8b5a2b;
-  border-radius: 14px;
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top, #9c6b3a, #6f4320);
+  box-shadow:
+    inset 0 4px 6px rgba(255,255,255,0.15),
+    inset 0 -4px 6px rgba(0,0,0,0.25),
+    0 4px 8px rgba(0,0,0,0.25);
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 38px;
+  font-size: 34px;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.15s;
 }
 
 .field:hover {
@@ -73,11 +77,11 @@ h1 {
 }
 
 .grow {
-  animation: grow 0.5s ease;
+  animation: grow 0.4s ease;
 }
 
 @keyframes grow {
-  from { transform: scale(0.6); opacity: 0; }
+  from { transform: scale(0.7); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
@@ -102,10 +106,8 @@ button {
   <h1>🌾 Ферма Онлайн</h1>
   <div class="money">💰 <span id="money">0</span></div>
 
-  <!-- ПОЛЕТАТА -->
   <div class="fields" id="fields"></div>
 
-  <!-- БУТОНИ -->
   <div class="controls">
     <button onclick="selectCrop('wheat')">🌾 Пшеница</button>
     <button onclick="selectCrop('carrot')">🥕 Морков</button>
@@ -139,7 +141,10 @@ function render() {
   fieldsData.forEach((f, i) => {
     const div = document.createElement("div");
     div.className = "field";
-    if (f) div.textContent = f.emoji;
+    if (f) {
+      div.textContent = f.emoji;
+      div.classList.add("grow");
+    }
     div.onclick = () => clickField(i);
     fieldsEl.appendChild(div);
   });
