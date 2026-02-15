@@ -6,109 +6,175 @@
 <title>Ферма Онлайн</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: url("grass.JPG") no-repeat center center fixed;
-    background-size: cover;
+*{box-sizing:border-box;font-family:sans-serif;}
+body{
+    margin:0;
+    min-height:100vh;
+    background:url("grass.JPG") repeat;
+    background-size:200px 200px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
-/* ГЛАВЕН КОНТЕЙНЕР – ВЕЧЕ НЕ Е ПРОЗРАЧЕН */
-.game {
-    min-height: 100vh;
-    background-color: #6e8f3a; /* ПЛЪТЕН ФОН */
-    padding: 20px;
-    box-sizing: border-box;
+.game{
+    width:100%;
+    max-width:420px;
+    background:#6fa44f;
+    padding:16px;
+    border-radius:20px;
+    box-shadow:0 10px 30px rgba(0,0,0,.4);
 }
 
-/* ЗАГЛАВИЕ */
-.title {
-    text-align: center;
-    color: white;
-    font-size: 36px;
-    font-weight: bold;
-    margin-top: 20px;
+h1{
+    text-align:center;
+    color:#fff;
+    margin:5px 0;
 }
 
-/* ПАРИ */
-.money {
-    text-align: center;
-    color: white;
-    font-size: 22px;
-    margin: 10px 0 20px;
+.stats{
+    text-align:center;
+    color:#fff;
+    font-size:18px;
+    margin-bottom:10px;
 }
 
-/* ПОЛЕТА */
-.fields {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    background-color: #6e8f3a; /* МАХА ПРОЗРАЧНОТО */
-    padding: 10px;
-    border-radius: 16px;
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin:15px 0;
+    background:#5b8d41;
+    padding:10px;
+    border-radius:16px;
 }
 
-/* ЕДНО ПОЛЕ */
-.field {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    background: linear-gradient(#8b5a2b, #6b3f1d);
-    border-radius: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 42px;
+.plot{
+    background:#7a4a22;
+    border-radius:16px;
+    height:70px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:34px;
+    cursor:pointer;
+    transition:.3s;
+    animation:pop .4s ease;
 }
 
-/* БУТОНИ */
-.buttons {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 20px;
+.plot.grow{background:#8b5a2b;}
+.plot.ready{background:#4caf50;}
+
+@keyframes pop{
+    from{transform:scale(.7);opacity:0;}
+    to{transform:scale(1);opacity:1;}
 }
 
-.button {
-    background: #f2f2f2;
-    padding: 14px 18px;
-    border-radius: 18px;
-    font-size: 20px;
-    color: #1e73be;
-    font-weight: bold;
+.buttons{
+    display:flex;
+    gap:8px;
 }
+
+button{
+    flex:1;
+    padding:10px;
+    border:none;
+    border-radius:14px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.wheat{background:#fff;}
+.carrot{background:#fff;}
+.tomato{background:#fff;}
 </style>
 </head>
 
 <body>
-
 <div class="game">
+<h1>🌾 Ферма Онлайн</h1>
 
-    <div class="title">🌾 Ферма Онлайн</div>
-    <div class="money">💰 500</div>
-
-    <div class="fields">
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-        <div class="field"></div>
-    </div>
-
-    <div class="buttons">
-        <div class="button">🌾 Пшеница</div>
-        <div class="button">🥕 Морков</div>
-        <div class="button">🍅 Домати</div>
-    </div>
-
+<div class="stats">
+💰 Пари: <span id="money">500</span> |
+⭐ Ниво: <span id="level">1</span>
 </div>
 
+<div class="grid" id="grid"></div>
+
+<div class="buttons">
+<button class="wheat" onclick="selectCrop('wheat')">🌾 Пшеница</button>
+<button class="carrot" onclick="selectCrop('carrot')">🥕 Морков</button>
+<button class="tomato" onclick="selectCrop('tomato')">🍅 Домати</button>
+</div>
+</div>
+
+<script>
+const grid=document.getElementById("grid");
+let selected=null;
+
+let game=JSON.parse(localStorage.getItem("farmGame")) || {
+    money:500,
+    level:1,
+    exp:0,
+    plots:Array(12).fill(null)
+};
+
+const crops={
+    wheat:{time:5000,profit:20,icon:"🌾"},
+    carrot:{time:8000,profit:35,icon:"🥕"},
+    tomato:{time:12000,profit:60,icon:"🍅"}
+};
+
+function save(){localStorage.setItem("farmGame",JSON.stringify(game));}
+
+function render(){
+    document.getElementById("money").textContent=game.money;
+    document.getElementById("level").textContent=game.level;
+    grid.innerHTML="";
+
+    game.plots.forEach((p,i)=>{
+        const d=document.createElement("div");
+        d.className="plot";
+        if(!p)d.onclick=()=>plant(i);
+        else{
+            const now=Date.now();
+            if(now-p.start>=crops[p.type].time){
+                d.classList.add("ready");
+                d.textContent=crops[p.type].icon;
+                d.onclick=()=>harvest(i);
+            }else{
+                d.classList.add("grow");
+                d.textContent="🌱";
+            }
+        }
+        grid.appendChild(d);
+    });
+}
+
+function selectCrop(c){selected=c;}
+
+function plant(i){
+    if(!selected)return;
+    if(game.money<10)return;
+    game.money-=10;
+    game.plots[i]={type:selected,start:Date.now()};
+    save();render();
+}
+
+function harvest(i){
+    const p=game.plots[i];
+    game.money+=crops[p.type].profit;
+    game.exp+=10;
+    if(game.exp>=game.level*50){
+        game.exp=0;
+        game.level++;
+    }
+    game.plots[i]=null;
+    save();render();
+}
+
+setInterval(render,1000);
+render();
+</script>
 </body>
 </html>
