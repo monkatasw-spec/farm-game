@@ -6,95 +6,74 @@
 <title>Ферма Онлайн</title>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: system-ui, -apple-system;
-}
-
 body {
-  background: url("grass.JPG") repeat;
-  background-size: 220px 220px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: url("https://i.imgur.com/3ZQ3Z5K.jpg") no-repeat center center fixed;
+  background-size: cover;
 }
 
 .game {
-  width: 92vw;
   max-width: 420px;
-  min-height: 520px;
-  background: rgba(255,255,255,0.35);
-  backdrop-filter: blur(8px);
-  border-radius: 22px;
-  padding: 16px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  margin: 20px auto;
+  padding: 15px;
 }
 
 h1 {
-  margin: 6px 0;
+  text-align: center;
+  font-size: 32px;
+  margin: 5px 0;
 }
 
 .money {
-  font-size: 18px;
-  margin-bottom: 12px;
-}
-
-/* 🌱 ПОЛЕТАТА */
-.fields {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  width: 100%;
-  justify-items: center;
-  margin-bottom: 14px;
+  text-align: center;
+  font-size: 22px;
+  margin-bottom: 10px;
 }
 
 .field {
-  width: 68px;
-  height: 68px;
-  border-radius: 16px;
-  background:
-    radial-gradient(circle at top, #9c6b3a, #6f4320);
-  box-shadow:
-    inset 0 4px 6px rgba(255,255,255,0.15),
-    inset 0 -4px 6px rgba(0,0,0,0.25),
-    0 4px 8px rgba(0,0,0,0.25);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 34px;
-  cursor: pointer;
-  transition: transform 0.15s;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
 }
 
-.field:hover {
-  transform: scale(1.05);
+.plot {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: linear-gradient(#8b5a2b, #6f421f);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.plot:active {
+  transform: scale(0.95);
 }
 
 .grow {
-  animation: grow 0.4s ease;
+  animation: grow 0.6s ease;
 }
 
 @keyframes grow {
-  from { transform: scale(0.7); opacity: 0; }
+  from { transform: scale(0.6); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
 }
 
-.controls {
+.buttons {
   display: flex;
-  gap: 10px;
+  justify-content: space-around;
 }
 
 button {
-  border: none;
+  font-size: 18px;
+  padding: 10px;
   border-radius: 14px;
-  padding: 10px 14px;
-  font-size: 15px;
+  border: none;
   cursor: pointer;
 }
 </style>
@@ -104,77 +83,63 @@ button {
 
 <div class="game">
   <h1>🌾 Ферма Онлайн</h1>
-  <div class="money">💰 <span id="money">0</span></div>
+  <div class="money">💰 <span id="money">500</span></div>
 
-  <div class="fields" id="fields"></div>
+  <div class="field" id="field"></div>
 
-  <div class="controls">
-    <button onclick="selectCrop('wheat')">🌾 Пшеница</button>
-    <button onclick="selectCrop('carrot')">🥕 Морков</button>
-    <button onclick="selectCrop('tomato')">🍅 Домати</button>
+  <div class="buttons">
+    <button onclick="selectCrop('🌾', 20)">Пшеница</button>
+    <button onclick="selectCrop('🥕', 30)">Морков</button>
+    <button onclick="selectCrop('🍅', 40)">Домати</button>
   </div>
 </div>
 
 <script>
-const crops = {
-  wheat: { emoji: "🌾", time: 3000, profit: 20 },
-  carrot: { emoji: "🥕", time: 4000, profit: 30 },
-  tomato: { emoji: "🍅", time: 5000, profit: 40 }
-};
-
-let selected = null;
 let money = Number(localStorage.getItem("money")) || 500;
-let fieldsData = JSON.parse(localStorage.getItem("fields")) || Array(9).fill(null);
+let fieldData = JSON.parse(localStorage.getItem("field")) || Array(9).fill(null);
+let selected = null;
 
+const field = document.getElementById("field");
 const moneyEl = document.getElementById("money");
-const fieldsEl = document.getElementById("fields");
-
-moneyEl.textContent = money;
 
 function save() {
   localStorage.setItem("money", money);
-  localStorage.setItem("fields", JSON.stringify(fieldsData));
+  localStorage.setItem("field", JSON.stringify(fieldData));
 }
 
 function render() {
-  fieldsEl.innerHTML = "";
-  fieldsData.forEach((f, i) => {
+  moneyEl.textContent = money;
+  field.innerHTML = "";
+
+  fieldData.forEach((crop, i) => {
     const div = document.createElement("div");
-    div.className = "field";
-    if (f) {
-      div.textContent = f.emoji;
-      div.classList.add("grow");
+    div.className = "plot";
+    if (crop) {
+      div.textContent = crop.icon;
+      div.onclick = () => harvest(i);
+    } else {
+      div.onclick = () => plant(i);
     }
-    div.onclick = () => clickField(i);
-    fieldsEl.appendChild(div);
+    field.appendChild(div);
   });
 }
 
-function selectCrop(crop) {
-  selected = crop;
+function selectCrop(icon, profit) {
+  selected = { icon, profit };
 }
 
-function clickField(i) {
-  if (!fieldsData[i] && selected) {
-    const crop = crops[selected];
-    fieldsData[i] = { ...crop, ready: false };
-    render();
+function plant(i) {
+  if (!selected || fieldData[i]) return;
+  fieldData[i] = selected;
+  save();
+  render();
+}
 
-    setTimeout(() => {
-      fieldsData[i].ready = true;
-      render();
-      save();
-    }, crop.time);
-
-    save();
-  }
-  else if (fieldsData[i] && fieldsData[i].ready) {
-    money += fieldsData[i].profit;
-    fieldsData[i] = null;
-    moneyEl.textContent = money;
-    save();
-    render();
-  }
+function harvest(i) {
+  money += fieldData[i].profit;
+  fieldData[i] = null;
+  save();
+  render();
 }
 
 render();
