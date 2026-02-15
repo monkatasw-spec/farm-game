@@ -1,165 +1,137 @@
 <!DOCTYPE html>
 <html lang="bg">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Farm Game</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ферма Онлайн</title>
 
 <style>
-body {
+html, body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: url("grass.JPG") center / cover no-repeat fixed;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui;
+}
+
+body {
+  background: url("grass.JPG");
+  background-size: 300px 300px;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
 }
 
-#game {
-  background: rgba(255,255,255,0.85);
+.game {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
   padding: 20px;
-  border-radius: 16px;
+  width: 90vw;
+  max-width: 420px;
 }
 
-#toolbar {
-  text-align: center;
+.tools {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
   margin-bottom: 15px;
 }
 
-button {
-  font-size: 22px;
-  margin: 5px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: none;
+.tool {
+  font-size: 32px;
   cursor: pointer;
+  padding: 8px;
+  border-radius: 10px;
 }
 
-#farm {
+.tool.active {
+  background: #dff0d8;
+}
+
+.fields {
   display: grid;
-  grid-template-columns: repeat(3, 90px);
-  gap: 14px;
-  justify-content: center;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
 }
 
-.plot {
-  width: 90px;
-  height: 90px;
+.field {
+  aspect-ratio: 1 / 1;
   background: #8b5a2b;
-  border-radius: 12px;
+  border-radius: 18px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 40px;
+  font-size: 42px;
   cursor: pointer;
-  position: relative;
-}
-
-.crop {
-  animation: grow 0.4s ease-out;
-}
-
-.crop.ready {
-  animation: sway 2.5s infinite ease-in-out;
-}
-
-.crop.harvest {
-  animation: pop 0.25s ease-out forwards;
-}
-
-@keyframes grow {
-  from { transform: scale(0.2); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes sway {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(1deg); }
-  50% { transform: rotate(0deg); }
-  75% { transform: rotate(-1deg); }
-  100% { transform: rotate(0deg); }
-}
-
-@keyframes pop {
-  from { transform: scale(1); opacity: 1; }
-  to { transform: scale(1.4); opacity: 0; }
+  user-select: none;
 }
 </style>
 </head>
 
 <body>
-<div id="game">
-  <div id="toolbar">
-    <button onclick="selectCrop('🌾',3000)">🌾</button>
-    <button onclick="selectCrop('🥕',6000)">🥕</button>
-    <button onclick="selectCrop('🍅',9000)">🍅</button>
+
+<div class="game">
+
+  <div class="tools">
+    <div class="tool active" data-crop="🌾">🌾</div>
+    <div class="tool" data-crop="🥕">🥕</div>
+    <div class="tool" data-crop="🍅">🍅</div>
   </div>
 
-  <div id="farm"></div>
+  <div class="fields" id="fields"></div>
+
 </div>
 
 <script>
-const farm = document.getElementById("farm");
-let selectedCrop = null;
-let growTime = 0;
+const fieldsEl = document.getElementById("fields");
+let selectedCrop = "🌾";
 
-const plots = JSON.parse(localStorage.getItem("plots")) || Array(9).fill(null);
-
-function selectCrop(icon, time) {
-  selectedCrop = icon;
-  growTime = time;
-}
-
-function save() {
-  localStorage.setItem("plots", JSON.stringify(plots));
-}
-
-function render() {
-  farm.innerHTML = "";
-  plots.forEach((plot, i) => {
-    const div = document.createElement("div");
-    div.className = "plot";
-
-    if (plot) {
-      const span = document.createElement("span");
-      span.textContent = plot.icon;
-      span.className = "crop";
-
-      if (Date.now() >= plot.readyAt) {
-        span.classList.add("ready");
-        div.onclick = () => harvest(i, span);
-      }
-
-      div.appendChild(span);
-    } else {
-      div.onclick = () => plant(i);
-    }
-
-    farm.appendChild(div);
-  });
-}
-
-function plant(i) {
-  if (!selectedCrop) return;
-  plots[i] = {
-    icon: selectedCrop,
-    readyAt: Date.now() + growTime
+document.querySelectorAll(".tool").forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll(".tool").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    selectedCrop = t.dataset.crop;
   };
-  save();
-  render();
+});
+
+function createField() {
+  const field = document.createElement("div");
+  field.className = "field";
+  field.dataset.state = "empty";
+  field.dataset.crop = "";
+
+  field.onclick = () => {
+    if (field.dataset.state === "empty") {
+      plant(field);
+    } else if (field.dataset.state === "ready") {
+      harvest(field);
+    }
+  };
+
+  return field;
 }
 
-function harvest(i, el) {
-  el.classList.add("harvest");
+function plant(field) {
+  field.dataset.state = "growing";
+  field.dataset.crop = selectedCrop;
+  field.textContent = "🌱";
+
   setTimeout(() => {
-    plots[i] = null;
-    save();
-    render();
-  }, 250);
+    field.dataset.state = "ready";
+    field.textContent = field.dataset.crop;
+  }, 2000);
 }
 
-render();
+function harvest(field) {
+  field.dataset.state = "empty";
+  field.dataset.crop = "";
+  field.textContent = "";
+}
+
+for (let i = 0; i < 9; i++) {
+  fieldsEl.appendChild(createField());
+}
 </script>
+
 </body>
 </html>
