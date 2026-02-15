@@ -2,127 +2,158 @@
 <html lang="bg">
 <head>
 <meta charset="UTF-8">
-<title>Farm Game</title>
+<title>Ферма Онлайн</title>
 
 <style>
-html,body{
+*{
+  box-sizing:border-box;
   margin:0;
-  width:100%;
-  height:100%;
-  font-family:Arial,sans-serif;
+  padding:0;
 }
 
-/* ФОН – ТРЕВА */
 body{
+  min-height:100vh;
   background:url("grass.JPG") repeat;
-  background-size:320px 320px;
-}
-
-/* Център */
-.farm{
-  width:100%;
-  height:100%;
+  background-size:220px 220px;
   display:flex;
   justify-content:center;
-  align-items:center;
+  align-items:flex-start;
+  font-family:Arial, sans-serif;
 }
 
-/* Панел */
-.panel{
-  background:rgba(255,255,255,0.18);
-  padding:30px;
-  border-radius:26px;
-  box-shadow:0 25px 50px rgba(0,0,0,0.45);
+/* контейнер */
+#game{
+  background:rgba(0,0,0,0.25);
+  backdrop-filter:blur(3px);
+  padding:20px;
+  margin-top:20px;
+  border-radius:20px;
+  width:100%;
+  max-width:820px;
 }
 
-/* Грид */
+/* горна част */
+header{
+  text-align:center;
+  color:#fff;
+  margin-bottom:16px;
+}
+
+#coins{
+  font-size:22px;
+  margin-top:6px;
+}
+
+/* полета */
 .grid{
   display:grid;
-  grid-template-columns:repeat(5,110px);
-  gap:18px;
+  grid-template-columns:repeat(5,140px);
+  gap:22px;
+  justify-content:center;
+  margin:20px auto;
 }
 
-/* ПОЛЕ – РЕАЛИСТИЧНА ПОЧВА */
 .plot{
-  width:110px;
-  height:110px;
-  border-radius:18px;
-  background:
-    linear-gradient(145deg,#7b4a24,#5c3217),
-    repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.05) 0,
-      rgba(255,255,255,0.05) 4px,
-      transparent 4px,
-      transparent 8px
-    );
+  width:140px;
+  height:140px;
+  background:linear-gradient(#6b4b2a,#4a331c);
+  border-radius:22px;
   box-shadow:
-    inset 0 6px 10px rgba(255,255,255,0.18),
-    inset 0 -8px 12px rgba(0,0,0,0.4),
-    0 10px 18px rgba(0,0,0,0.5);
-  border:3px solid #3d1f0f;
+    inset 0 6px 10px rgba(255,255,255,0.15),
+    inset 0 -8px 14px rgba(0,0,0,0.4),
+    0 6px 10px rgba(0,0,0,0.35);
   display:flex;
   justify-content:center;
   align-items:center;
-  font-size:42px;
+  font-size:54px;
   cursor:pointer;
-  transition:0.25s;
+  transition:transform 0.1s;
 }
 
-/* Засадено */
-.plot.planted{
-  background:
-    linear-gradient(145deg,#4c8a35,#2f5f22),
-    repeating-linear-gradient(
-      45deg,
-      rgba(255,255,255,0.08) 0,
-      rgba(255,255,255,0.08) 4px,
-      transparent 4px,
-      transparent 8px
-    );
-  border-color:#1e3f14;
+.plot:active{
+  transform:scale(0.95);
 }
 
-.plot:hover{
-  transform:translateY(-4px) scale(1.04);
+/* меню */
+#menu{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin-top:10px;
+}
+
+button{
+  padding:12px 16px;
+  font-size:18px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  background:#fff;
 }
 </style>
 </head>
 
 <body>
-<div class="farm">
-  <div class="panel">
-    <div class="grid" id="grid"></div>
+
+<div id="game">
+  <header>
+    <h1>🌾 Ферма Онлайн</h1>
+    <div id="coins">💰 500</div>
+  </header>
+
+  <div class="grid" id="farm"></div>
+
+  <div id="menu">
+    <button onclick="selectSeed('🌾')">Пшеница</button>
+    <button onclick="selectSeed('🥕')">Морков</button>
+    <button onclick="selectSeed('🍅')">Домати</button>
   </div>
 </div>
 
 <script>
-const grid = document.getElementById("grid");
-const SIZE = 25;
+let coins = 500;
+let selectedSeed = null;
+const farm = document.getElementById("farm");
+const coinsEl = document.getElementById("coins");
 
-let plots = JSON.parse(localStorage.getItem("farm_plots"))
-            || Array(SIZE).fill(0);
-
-function save(){
-  localStorage.setItem("farm_plots",JSON.stringify(plots));
+/* създаване на полета */
+for(let i=0;i<15;i++){
+  const plot = document.createElement("div");
+  plot.className = "plot";
+  plot.dataset.state = "empty";
+  plot.onclick = ()=>plant(plot);
+  farm.appendChild(plot);
 }
 
-function render(){
-  grid.innerHTML="";
-  plots.forEach((v,i)=>{
-    const d=document.createElement("div");
-    d.className="plot"+(v?" planted":"");
-    d.textContent=v?"🌱":"";
-    d.onclick=()=>{
-      plots[i]=plots[i]?0:1;
-      save();
-      render();
-    };
-    grid.appendChild(d);
-  });
+function selectSeed(seed){
+  selectedSeed = seed;
 }
 
-render();
+function plant(plot){
+  if(plot.dataset.state !== "empty") return;
+  if(!selectedSeed) return;
+
+  plot.textContent = selectedSeed;
+  plot.dataset.state = "growing";
+
+  setTimeout(()=>{
+    plot.dataset.state = "ready";
+    plot.style.filter = "brightness(1.3)";
+  },3000);
+}
+
+farm.addEventListener("click",e=>{
+  if(!e.target.classList.contains("plot")) return;
+
+  if(e.target.dataset.state === "ready"){
+    e.target.textContent = "";
+    e.target.dataset.state = "empty";
+    e.target.style.filter = "none";
+    coins += 50;
+    coinsEl.textContent = "💰 " + coins;
+  }
+});
 </script>
+
 </body>
 </html>
